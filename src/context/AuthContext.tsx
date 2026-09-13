@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null
   user: User | null
   loading: boolean
+  error: string | null
   business: Business | null
   membership: BusinessMember | null
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
@@ -21,76 +22,133 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [business, setBusiness] = useState<Business | null>(null)
   const [membership, setMembership] = useState<BusinessMember | null>(null)
 
   async function loadBusinessData(userId: string) {
-    const { data: member } = await supabase
-      .from('business_members')
-      .select('*, businesses(*)')
-      .eq('user_id', userId)
-      .maybeSingle()
+    try {
+      const { data: member, error: memberError } = await supabase
+        .from('business_members')
+        .select('*, businesses(*)')
+        .eq('user_id', userId)
+        .maybeSingle()
 
-    if (member) {
-      setMembership(member as BusinessMember)
-      setBusiness(member.businesses as Business)
-    } else {
+      if (memberError) {
+        console.error('Error loading business member:', memberError)
+        setError('Failed to load business data')
+        setMembership(null)
+        setBusiness(null)
+        return
+      }
+
+      if (member) {
+        setMembership(member as BusinessMember)
+        setBusiness(member.businesses as Business)
+        setError(null)
+      } else {
+        setMembership(null)
+        setBusiness(null)
+      }
+    } catch (err) {
+      console.error('Error in loadBusinessData:', err)
+      setError('Failed to load business data')
       setMembership(null)
       setBusiness(null)
     }
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        loadBusinessData(session.user.id).finally(() => setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    })
+    let isMounted = true
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        (async () => {
-          await loadBusinessData(session.user.id)
+    async function initAuth() {
+      try {
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          setError('Failed to load session')
           setLoading(false)
-        })()
-      } else {
-        setBusiness(null)
-        setMembership(null)
-        setLoading(false)
-      }
-    })
+          return
+        }
 
-    return () => subscription.unsubscribe()
+        if (isMounted) {
+          setSession(currentSession)
+          setUser(currentSession?.user ?? null)
+
+          if (currentSession?.user) {
+            await loadBusinessData(currentSession.user.id)
+          }
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('Auth init error:', err)
+        if (isMounted) {
+          setError('Failed to initialize authentication')
+          setLoading(false)
+        }
+      }
+    }
+
+    initAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, currentSession) => {
+        if (!isMounted) return
+
+        setSession(currentSession)
+        setUser(currentSession?.user ?? null)
+
+        if (currentSession?.user) {
+          await loadBusinessData(currentSession.user.id)
+        } else {
+          setBusiness(null)
+          setMembership(null)
+        }
+      }
+    )
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error: error?.message ?? null }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      return { error: error?.message ?? null }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign in failed'
+      return { error: message }
+    }
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    })
-    if (error) return { error: error.message }
-    // The owner's business and membership row are created during onboarding,
-    // where the business itself exists and can be linked in one step.
-    void data
-    return { error: null }
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      })
+      if (error) return { error: error.message }
+      return { error: null }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign up failed'
+      return { error: message }
+    }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    setBusiness(null)
-    setMembership(null)
+    try {
+      await supabase.auth.signOut()
+      setBusiness(null)
+      setMembership(null)
+      setError(null)
+    } catch (err) {
+      console.error('Sign out error:', err)
+      setError('Failed to sign out')
+    }
   }
 
   const refreshBusiness = async () => {
@@ -98,7 +156,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, business, membership, signIn, signUp, signOut, refreshBusiness }}>
+    <AuthContext.Provider
+      value={{ session, user, loading, error, business, membership, signIn, signUp, signOut, refreshBusiness }}
+    >
       {children}
     </AuthContext.Provider>
   )
