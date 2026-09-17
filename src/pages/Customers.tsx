@@ -6,12 +6,24 @@ import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
 import { formatCurrency, formatDate, downloadCSV } from "@/lib/utils";
 import type { Customer, Booking } from "@/types";
-import { Users, Plus, Search, Download, Edit, Trash2, Mail, Phone, X } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Search,
+  Download,
+  Edit,
+  Trash2,
+  Mail,
+  Phone,
+  AlertCircle,
+} from "lucide-react";
 
 export function Customers() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -20,11 +32,19 @@ export function Customers() {
 
   const load = useCallback(async () => {
     if (!business) return;
-    const { data } = await supabase
+    const businessId = business.id;
+    const { data, error } = await supabase
       .from("customers")
       .select("*")
-      .eq("business_id", business.id)
+      .eq("business_id", businessId)
       .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load customers:", error);
+      setLoadError("Failed to load customers. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
     setCustomers(data || []);
     setLoading(false);
   }, [business]);
@@ -51,7 +71,13 @@ export function Customers() {
   };
 
   const deleteCustomer = async (id: string) => {
-    await supabase.from("customers").delete().eq("id", id);
+    const { error: delError } = await supabase.from("customers").delete().eq("id", id);
+    if (delError) {
+      console.error("Failed to delete customer:", delError);
+      setActionError(`Could not delete the customer: ${delError.message}`);
+      return;
+    }
+    setActionError(null);
     load();
   };
 
@@ -69,6 +95,16 @@ export function Customers() {
     );
   };
 
+  if (!business) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="No business found"
+        description="Complete the onboarding setup to manage customers."
+      />
+    );
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center py-20">
@@ -76,8 +112,33 @@ export function Customers() {
       </div>
     );
 
+  if (loadError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={load} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-error-300 bg-error-50 dark:bg-error-900/20 dark:border-error-800 px-4 py-3 text-sm text-error-700 dark:text-error-300">
+          <span>{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-error-500"
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">{t("customers")}</h1>
         <div className="flex gap-2">
@@ -280,10 +341,12 @@ function CustomerForm({
   const [phone, setPhone] = useState(customer?.phone || "");
   const [notes, setNotes] = useState(customer?.notes || "");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     const payload = {
       business_id: businessId,
       name,
@@ -291,10 +354,14 @@ function CustomerForm({
       phone: phone || null,
       notes: notes || null,
     };
-    if (customer) {
-      await supabase.from("customers").update(payload).eq("id", customer.id);
-    } else {
-      await supabase.from("customers").insert(payload);
+    const { error: saveError } = customer
+      ? await supabase.from("customers").update(payload).eq("id", customer.id)
+      : await supabase.from("customers").insert(payload);
+    if (saveError) {
+      console.error("Failed to save customer:", saveError);
+      setError(saveError.message);
+      setSaving(false);
+      return;
     }
     setSaving(false);
     onSaved();
@@ -334,6 +401,7 @@ function CustomerForm({
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
+        {error && <p className="text-sm text-error-600">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-secondary">
             Cancel

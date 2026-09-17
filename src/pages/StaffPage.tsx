@@ -5,7 +5,7 @@ import { useI18n } from "@/context/I18nContext";
 import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
 import type { Staff, WorkingHour, UserRole } from "@/types";
-import { UserCog, Plus, Edit, Trash2, Clock, Mail, Phone } from "lucide-react";
+import { UserCog, Plus, Edit, Trash2, Clock, Mail, Phone, AlertCircle } from "lucide-react";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -13,6 +13,8 @@ export function StaffPage() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Staff | null>(null);
@@ -21,11 +23,19 @@ export function StaffPage() {
 
   const load = useCallback(async () => {
     if (!business) return;
-    const { data } = await supabase
+    const businessId = business.id;
+    const { data, error } = await supabase
       .from("staff")
       .select("*")
-      .eq("business_id", business.id)
+      .eq("business_id", businessId)
       .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load staff:", error);
+      setLoadError("Failed to load staff. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
     setStaffList(data || []);
     setLoading(false);
   }, [business]);
@@ -35,15 +45,35 @@ export function StaffPage() {
   }, [load]);
 
   const deleteStaff = async (id: string) => {
-    await supabase.from("staff").delete().eq("id", id);
+    const { error: delError } = await supabase.from("staff").delete().eq("id", id);
+    if (delError) {
+      console.error("Failed to delete staff:", delError);
+      setActionError(`Could not delete the staff member: ${delError.message}`);
+      return;
+    }
+    setActionError(null);
     load();
   };
 
   const openSchedule = async (s: Staff) => {
     setScheduleStaff(s);
-    const { data } = await supabase.from("working_hours").select("*").eq("staff_id", s.id);
+    const { data, error } = await supabase.from("working_hours").select("*").eq("staff_id", s.id);
+    if (error) {
+      console.error("Failed to load working hours:", error);
+      setActionError("Could not load working hours. Please try again.");
+    }
     setWorkingHours(data || []);
   };
+
+  if (!business) {
+    return (
+      <EmptyState
+        icon={UserCog}
+        title="No business found"
+        description="Complete the onboarding setup to manage staff."
+      />
+    );
+  }
 
   if (loading)
     return (
@@ -52,8 +82,33 @@ export function StaffPage() {
       </div>
     );
 
+  if (loadError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={load} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-error-300 bg-error-50 dark:bg-error-900/20 dark:border-error-800 px-4 py-3 text-sm text-error-700 dark:text-error-300">
+          <span>{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-error-500"
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">{t("staff")}</h1>
         <button
@@ -180,10 +235,13 @@ function StaffForm({
   const [role, setRole] = useState<UserRole>((staff?.role as UserRole) || "staff");
   const [bio, setBio] = useState(staff?.bio || "");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
+    let submitError: string | null = null;
     const payload = {
       business_id: businessId,
       name,
@@ -193,10 +251,22 @@ function StaffForm({
       bio: bio || null,
     };
     if (staff) {
-      await supabase.from("staff").update(payload).eq("id", staff.id);
+      const { error: saveError } = await supabase.from("staff").update(payload).eq("id", staff.id);
+      if (saveError) {
+        console.error("Failed to save staff:", saveError);
+        submitError = saveError.message;
+      }
     } else {
-      const { data } = await supabase.from("staff").insert(payload).select().single();
-      if (data) {
+      const { data, error: saveError } = await supabase
+        .from("staff")
+        .insert(payload)
+        .select()
+        .single();
+      if (saveError) {
+        console.error("Failed to create staff:", saveError);
+        submitError = saveError.message;
+      } else if (data) {
+        // Default Mon–Fri 09:00–17:00 schedule (still editable afterwards).
         const defaultHours = DAYS.map((_, i) => ({
           staff_id: data.id,
           day_of_week: i,
@@ -204,10 +274,19 @@ function StaffForm({
           end_time: "17:00",
           is_working: i >= 1 && i <= 5,
         }));
-        await supabase.from("working_hours").insert(defaultHours);
+        const { error: hoursError } = await supabase.from("working_hours").insert(defaultHours);
+        if (hoursError) {
+          console.error("Staff created, but default working hours failed:", hoursError);
+          submitError =
+            "The staff member was created, but setting the default working hours failed. You can set them under 'Hours'.";
+        }
       }
     }
     setSaving(false);
+    if (submitError) {
+      setError(submitError);
+      return;
+    }
     onSaved();
   };
 
@@ -257,6 +336,7 @@ function StaffForm({
             onChange={(e) => setBio(e.target.value)}
           />
         </div>
+        {error && <p className="text-sm text-error-600">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-secondary">
             Cancel
@@ -292,6 +372,7 @@ function ScheduleModal({
         })),
   );
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggle = (idx: number) => {
     setHours((h) => h.map((h, i) => (i === idx ? { ...h, is_working: !h.is_working } : h)));
@@ -303,8 +384,18 @@ function ScheduleModal({
 
   const save = async () => {
     setSaving(true);
-    await supabase.from("working_hours").delete().eq("staff_id", staff.id);
-    await supabase.from("working_hours").insert(
+    setError(null);
+    const { error: delError } = await supabase
+      .from("working_hours")
+      .delete()
+      .eq("staff_id", staff.id);
+    if (delError) {
+      console.error("Failed to save working hours:", delError);
+      setError(`Could not save working hours: ${delError.message}`);
+      setSaving(false);
+      return;
+    }
+    const { error: insError } = await supabase.from("working_hours").insert(
       hours.map(({ staff_id, day_of_week, start_time, end_time, is_working }) => ({
         staff_id,
         day_of_week,
@@ -313,6 +404,12 @@ function ScheduleModal({
         is_working,
       })),
     );
+    if (insError) {
+      console.error("Failed to save working hours:", insError);
+      setError(`Could not save working hours: ${insError.message}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   };

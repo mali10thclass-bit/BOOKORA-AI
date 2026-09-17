@@ -6,23 +6,33 @@ import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
 import { formatCurrency } from "@/lib/utils";
 import type { Service } from "@/types";
-import { Sparkles, Plus, Edit, Trash2, Clock, DollarSign } from "lucide-react";
+import { Sparkles, Plus, Edit, Trash2, Clock, DollarSign, AlertCircle } from "lucide-react";
 
 export function ServicesPage() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
 
   const load = useCallback(async () => {
     if (!business) return;
-    const { data } = await supabase
+    const businessId = business.id;
+    const { data, error } = await supabase
       .from("services")
       .select("*")
-      .eq("business_id", business.id)
+      .eq("business_id", businessId)
       .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load services:", error);
+      setLoadError("Failed to load services. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
     setServices(data || []);
     setLoading(false);
   }, [business]);
@@ -32,14 +42,39 @@ export function ServicesPage() {
   }, [load]);
 
   const toggleActive = async (s: Service) => {
-    await supabase.from("services").update({ is_active: !s.is_active }).eq("id", s.id);
+    const { error: updError } = await supabase
+      .from("services")
+      .update({ is_active: !s.is_active })
+      .eq("id", s.id);
+    if (updError) {
+      console.error("Failed to toggle service:", updError);
+      setActionError(`Could not update the service: ${updError.message}`);
+      return;
+    }
+    setActionError(null);
     load();
   };
 
   const deleteService = async (id: string) => {
-    await supabase.from("services").delete().eq("id", id);
+    const { error: delError } = await supabase.from("services").delete().eq("id", id);
+    if (delError) {
+      console.error("Failed to delete service:", delError);
+      setActionError(`Could not delete the service: ${delError.message}`);
+      return;
+    }
+    setActionError(null);
     load();
   };
+
+  if (!business) {
+    return (
+      <EmptyState
+        icon={Sparkles}
+        title="No business found"
+        description="Complete the onboarding setup to manage services."
+      />
+    );
+  }
 
   if (loading)
     return (
@@ -48,8 +83,33 @@ export function ServicesPage() {
       </div>
     );
 
+  if (loadError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={load} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-error-300 bg-error-50 dark:bg-error-900/20 dark:border-error-800 px-4 py-3 text-sm text-error-700 dark:text-error-300">
+          <span>{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-error-500"
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">{t("services")}</h1>
         <button
@@ -170,10 +230,12 @@ function ServiceForm({
   const [color, setColor] = useState(service?.color || "#3b82f6");
   const [category, setCategory] = useState(service?.category || "");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
     const payload = {
       business_id: businessId,
       name,
@@ -183,10 +245,14 @@ function ServiceForm({
       color,
       category: category || null,
     };
-    if (service) {
-      await supabase.from("services").update(payload).eq("id", service.id);
-    } else {
-      await supabase.from("services").insert(payload);
+    const { error: saveError } = service
+      ? await supabase.from("services").update(payload).eq("id", service.id)
+      : await supabase.from("services").insert(payload);
+    if (saveError) {
+      console.error("Failed to save service:", saveError);
+      setError(saveError.message);
+      setSaving(false);
+      return;
     }
     setSaving(false);
     onSaved();
@@ -258,6 +324,7 @@ function ServiceForm({
             />
           </div>
         </div>
+        {error && <p className="text-sm text-error-600">{error}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn-secondary">
             Cancel

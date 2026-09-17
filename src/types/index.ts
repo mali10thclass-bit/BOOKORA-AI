@@ -22,8 +22,20 @@ export interface Business {
   onboarding_completed: boolean | null;
   plan: string | null;
   plan_status: string | null;
+  // Booking engine settings (see migration 20260917_002).
+  booking_buffer_minutes: number | null;
+  cancellation_notice_hours: number | null;
+  reminder_lead_minutes: number | null;
   created_at: string | null;
   updated_at: string | null;
+}
+
+export interface Holiday {
+  id: string;
+  business_id: string;
+  holiday_date: string; // YYYY-MM-DD (business-local calendar date)
+  name: string;
+  created_at: string | null;
 }
 
 export interface BusinessMember {

@@ -5,23 +5,42 @@ import { useI18n } from "@/context/I18nContext";
 import { EmptyState } from "@/components/EmptyState";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { Notification } from "@/types";
-import { Bell, Send, Mail, MessageSquare, Smartphone, Clock, Check, X } from "lucide-react";
+import {
+  Bell,
+  Send,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Clock,
+  Check,
+  X,
+  AlertCircle,
+} from "lucide-react";
 
 export function NotificationsPage() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showSend, setShowSend] = useState(false);
 
   const load = useCallback(async () => {
     if (!business) return;
-    const { data } = await supabase
+    const businessId = business.id;
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
-      .eq("business_id", business.id)
+      .eq("business_id", businessId)
       .order("created_at", { ascending: false })
       .limit(50);
+    if (error) {
+      console.error("Failed to load notifications:", error);
+      setLoadError("Failed to load notifications. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
     setNotifications(data || []);
     setLoading(false);
   }, [business]);
@@ -36,10 +55,33 @@ export function NotificationsPage() {
   const statusColor = (st: string | null) =>
     st === "sent" ? "text-accent-600" : st === "failed" ? "text-error-600" : "text-warning-600";
 
+  if (!business) {
+    return (
+      <EmptyState
+        icon={Bell}
+        title="No business found"
+        description="Complete the onboarding setup to view notifications."
+      />
+    );
+  }
+
   if (loading)
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={load} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
       </div>
     );
 
@@ -79,7 +121,13 @@ export function NotificationsPage() {
       <div className="card">
         <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800">
           <h3 className="font-semibold">{t("reminder_templates")}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">Automated notification templates</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Template messages.{" "}
+            <span className="text-warning-600">
+              Automated delivery is not yet wired to an email/SMS provider — these are not sent
+              automatically.
+            </span>
+          </p>
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {templates.map((tpl) => (
@@ -88,8 +136,8 @@ export function NotificationsPage() {
                 <p className="text-sm font-medium">{tpl.name}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{tpl.body}</p>
               </div>
-              <span className="badge bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs">
-                Active
+              <span className="badge bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs">
+                Template
               </span>
             </div>
           ))}
@@ -159,11 +207,13 @@ function SendNotificationModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await supabase.from("notifications").insert({
+    setError(null);
+    const { error: insError } = await supabase.from("notifications").insert({
       business_id: businessId,
       type: "booking_reminder",
       channel,
@@ -172,6 +222,12 @@ function SendNotificationModal({
       body,
       status: "pending",
     });
+    if (insError) {
+      console.error("Failed to queue notification:", insError);
+      setError(`Could not save the notification: ${insError.message}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onSent();
   };
@@ -223,12 +279,18 @@ function SendNotificationModal({
               required
             />
           </div>
+          <p className="text-xs text-gray-500">
+            This records the notification in your log as{" "}
+            <span className="font-medium">pending</span>. It is not delivered until a delivery
+            provider is connected.
+          </p>
+          {error && <p className="text-sm text-error-600">{error}</p>}
           <div className="flex justify-end gap-2">
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancel
             </button>
             <button type="submit" disabled={saving} className="btn-primary">
-              {saving ? "Sending..." : "Send"}
+              {saving ? "Queueing..." : "Queue Notification"}
             </button>
           </div>
         </form>
