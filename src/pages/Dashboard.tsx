@@ -5,7 +5,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/context/I18nContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
-import { formatCurrency, formatDate, formatTime } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatDate,
+  formatTime,
+  isoToZonedParts,
+  shiftDate,
+  zonedTimeToIso,
+} from "@/lib/utils";
 import type { Booking } from "@/types";
 import {
   CalendarDays,
@@ -51,6 +58,13 @@ export function Dashboard() {
     // Capture after the null guard: hoisted function declarations reset
     // TypeScript's narrowing of `business`, so use a local const.
     const businessId = business.id;
+    // "Today" in the BUSINESS timezone (not the viewer's), as an instant
+    // range so the start_time (timestamptz) comparison is correct.
+    const tz = business.timezone || "UTC";
+    const todayBiz = isoToZonedParts(new Date().toISOString(), tz).date;
+    const todayStartIso = zonedTimeToIso(todayBiz, "00:00", tz);
+    const todayEndIso = zonedTimeToIso(shiftDate(todayBiz, 1), "00:00", tz);
+
     async function load() {
       try {
         setError(null);
@@ -59,8 +73,7 @@ export function Dashboard() {
             .from("bookings")
             .select("*, service:services(*), staff:staff(*), customer:customers(*)")
             .eq("business_id", businessId)
-            .order("created_at", { ascending: false })
-            .limit(10),
+            .order("created_at", { ascending: false }),
           supabase
             .from("customers")
             .select("id", { count: "exact", head: true })
@@ -74,7 +87,8 @@ export function Dashboard() {
             .from("bookings")
             .select("id", { count: "exact", head: true })
             .eq("business_id", businessId)
-            .gte("start_time", new Date().toISOString().split("T")[0]),
+            .gte("start_time", todayStartIso)
+            .lt("start_time", todayEndIso),
         ]);
 
         if (bookingsRes.error || customersRes.error || staffRes.error || todayRes.error) {
@@ -83,18 +97,20 @@ export function Dashboard() {
           return;
         }
 
-        const bookings = bookingsRes.data || [];
-        const revenue = bookings
+        // All bookings (no limit) so KPIs reflect the whole business,
+        // not just the latest 10 rows.
+        const allBookings = (bookingsRes.data || []) as unknown as Booking[];
+        const revenue = allBookings
           .filter((b: Booking) => b.payment_status === "paid")
           .reduce((sum: number, b: Booking) => sum + Number(b.price || 0), 0);
 
         setStats({
-          totalBookings: bookingsRes.count || 0,
+          totalBookings: allBookings.length,
           revenue,
           activeCustomers: customersRes.count || 0,
           staffCount: staffRes.count || 0,
         });
-        setRecentBookings((bookings as unknown as Booking[]).slice(0, 10));
+        setRecentBookings(allBookings.slice(0, 10));
         setTodayCount(todayRes.count || 0);
         setLoading(false);
       } catch (err) {

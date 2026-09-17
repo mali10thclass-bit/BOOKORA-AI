@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/context/I18nContext";
-import { formatCurrency, downloadCSV, formatDate } from "@/lib/utils";
+import { formatCurrency, downloadCSV, isoToZonedParts } from "@/lib/utils";
 import type { Booking } from "@/types";
 import {
   BarChart3,
@@ -12,7 +12,7 @@ import {
   DollarSign,
   CalendarDays,
   CheckCircle2,
-  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -29,24 +29,44 @@ import {
 } from "recharts";
 import { BusinessAssistant } from "@/components/BusinessAssistant";
 
+/** Calendar math on business-timezone date strings (YYYY-MM-DD). */
+function shiftBizDate(bizDate: string, days: number): string {
+  const [y, m, d] = bizDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().split("T")[0];
+}
+
 export function Analytics() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!business) return;
-    supabase
+    const businessId = business.id;
+    const { data, error } = await supabase
       .from("bookings")
       .select("*, service:services(*), staff:staff(*), customer:customers(*)")
-      .eq("business_id", business.id)
-      .order("start_time", { ascending: false })
-      .then(({ data }) => {
-        setBookings((data || []) as unknown as Booking[]);
-        setLoading(false);
-      });
+      .eq("business_id", businessId)
+      .order("start_time", { ascending: false });
+    if (error) {
+      console.error("Failed to load analytics:", error);
+      setLoadError("Failed to load analytics. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setBookings((data || []) as unknown as Booking[]);
+    setLoading(false);
   }, [business]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (!business) {
+    return <p className="text-center text-gray-400 py-20">Complete onboarding to see analytics.</p>;
+  }
 
   if (loading)
     return (
@@ -55,26 +75,102 @@ export function Analytics() {
       </div>
     );
 
-  const total = bookings.length;
-  const completed = bookings.filter((b) => b.status === "completed");
-  const cancelled = bookings.filter((b) => b.status === "cancelled");
-  const revenue = completed
-    .filter((b) => b.payment_status === "paid")
-    .reduce((s, b) => s + Number(b.price), 0);
-  const avgValue = completed.length > 0 ? revenue / completed.length : 0;
-  const completionRate = total > 0 ? (completed.length / total) * 100 : 0;
-  const cancelRate = total > 0 ? (cancelled.length / total) * 100 : 0;
+  if (loadError)
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={loadData} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
 
-  // Last 7 days chart
+  const tz = business.timezone || "UTC";
+  // Business-timezone date of each booking (never the viewer's timezone).
+  const withBizDate = bookings.map((b) => ({ b, date: isoToZonedParts(b.start_time, tz).date }));
+  const today = isoToZonedParts(new Date().toISOString(), tz).date;
+  const windowStart = shiftBizDate(today, -30);
+  const prevStart = shiftBizDate(today, -60);
+
+  const inWindow = (d: string, from: string, to: string) => d > from && d <= to;
+  const current = withBizDate.filter(({ date }) => inWindow(date, windowStart, today));
+  const previous = withBizDate.filter(({ date }) => inWindow(date, prevStart, windowStart));
+
+  const sumRevenue = (rows: { b: Booking }[]) =>
+    rows
+      .filter(({ b }) => b.payment_status === "paid")
+      .reduce((s, { b }) => s + Number(b.price), 0);
+  const countCompleted = (rows: { b: Booking }[]) =>
+    rows.filter(({ b }) => b.status === "completed").length;
+
+  const revenue = sumRevenue(current);
+  const prevRevenue = sumRevenue(previous);
+  const completed = countCompleted(current);
+  const prevCompleted = countCompleted(previous);
+  const total = current.length;
+  const prevTotal = previous.length;
+  const completedAll = bookings.filter((b) => b.status === "completed");
+  const cancelledAll = bookings.filter((b) => b.status === "cancelled");
+  const completionRate = bookings.length > 0 ? (completedAll.length / bookings.length) * 100 : 0;
+
+  /** Real period-over-period change, or a null label when the previous
+   *  period has no data (we never display an invented trend). */
+  const trendOf = (now: number, before: number): { label: string | null; up: boolean } => {
+    if (before <= 0 && now <= 0) return { label: null, up: true };
+    if (before <= 0) return { label: "+new", up: true };
+    const pct = Math.round(((now - before) / before) * 100);
+    if (pct === 0) return { label: "0%", up: true };
+    return { label: `${pct > 0 ? "+" : ""}${pct}%`, up: pct > 0 };
+  };
+
+  const completionRateCur = total > 0 ? (completed / total) * 100 : 0;
+  const completionRatePrev = prevTotal > 0 ? (prevCompleted / prevTotal) * 100 : 0;
+  const revenueTrend = trendOf(revenue, prevRevenue);
+  const bookingsTrend = trendOf(total, prevTotal);
+  const avgTrend = trendOf(
+    total > 0 ? revenue / total : 0,
+    prevTotal > 0 ? prevRevenue / prevTotal : 0,
+  );
+  const completionTrend = trendOf(completionRateCur, completionRatePrev);
+
+  const kpis = [
+    {
+      label: t("total_revenue"),
+      value: formatCurrency(revenue, business.currency || "USD"),
+      icon: DollarSign,
+      trend: revenueTrend,
+    },
+    {
+      label: `${t("total_bookings")} (30d)`,
+      value: total,
+      icon: CalendarDays,
+      trend: bookingsTrend,
+    },
+    {
+      label: t("avg_booking_value"),
+      value: formatCurrency(total > 0 ? revenue / total : 0, business.currency || "USD"),
+      icon: TrendingUp,
+      trend: avgTrend,
+    },
+    {
+      label: t("completion_rate"),
+      value: `${completionRate.toFixed(0)}%`,
+      icon: CheckCircle2,
+      trend: completionTrend,
+    },
+  ];
+
+  // Last 7 business-timezone days.
   const last7 = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const dayStr = d.toISOString().split("T")[0];
-    const count = bookings.filter((b) => b.start_time.startsWith(dayStr)).length;
-    return { date: formatDate(d, "EEE"), bookings: count };
+    const dayStr = shiftBizDate(today, i - 6);
+    const count = withBizDate.filter(({ date }) => date === dayStr).length;
+    return { date: dayStr.slice(5), bookings: count };
   });
 
-  // Status breakdown
+  // Status breakdown (all time).
   const statusData = [
     {
       name: "Confirmed",
@@ -86,8 +182,8 @@ export function Analytics() {
       value: bookings.filter((b) => b.status === "pending").length,
       color: "#f59e0b",
     },
-    { name: "Completed", value: completed.length, color: "#10b981" },
-    { name: "Cancelled", value: cancelled.length, color: "#9ca3af" },
+    { name: "Completed", value: completedAll.length, color: "#10b981" },
+    { name: "Cancelled", value: cancelledAll.length, color: "#9ca3af" },
     {
       name: "No Show",
       value: bookings.filter((b) => b.status === "no_show").length,
@@ -95,7 +191,7 @@ export function Analytics() {
     },
   ].filter((d) => d.value > 0);
 
-  // Staff performance
+  // Staff performance (all time, revenue = paid bookings only).
   const staffMap = new Map<string, { name: string; bookings: number; revenue: number }>();
   bookings.forEach((b) => {
     const name = b.staff?.name || "Unknown";
@@ -106,36 +202,11 @@ export function Analytics() {
   });
   const staffData = Array.from(staffMap.values());
 
-  const kpis = [
-    {
-      label: t("total_revenue"),
-      value: formatCurrency(revenue, business?.currency || "USD"),
-      icon: DollarSign,
-      trend: "+12%",
-      up: true,
-    },
-    { label: t("total_bookings"), value: total, icon: CalendarDays, trend: "+8%", up: true },
-    {
-      label: t("avg_booking_value"),
-      value: formatCurrency(avgValue, business?.currency || "USD"),
-      icon: TrendingUp,
-      trend: "+3%",
-      up: true,
-    },
-    {
-      label: t("completion_rate"),
-      value: `${completionRate.toFixed(0)}%`,
-      icon: CheckCircle2,
-      trend: cancelRate > 10 ? "-2%" : "+5%",
-      up: cancelRate <= 10,
-    },
-  ];
-
   const handleExport = () => {
     downloadCSV(
       "analytics.csv",
-      bookings.map((b) => ({
-        date: formatDate(b.start_time),
+      withBizDate.map(({ b, date }) => ({
+        date,
         customer: b.customer?.name || "",
         service: b.service?.name || "",
         staff: b.staff?.name || "",
@@ -149,7 +220,12 @@ export function Analytics() {
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">{t("analytics")}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">{t("analytics")}</h1>
+          <p className="text-xs text-gray-400 mt-0.5">
+            KPIs compare the last 30 days with the 30 days before that, in the business timezone.
+          </p>
+        </div>
         <button onClick={handleExport} className="btn-secondary">
           <Download size={16} /> {t("export")} CSV
         </button>
@@ -168,11 +244,18 @@ export function Analytics() {
                 <div className="w-9 h-9 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
                   <k.icon size={18} className="text-primary-600" />
                 </div>
-                <span
-                  className={`text-xs flex items-center gap-0.5 ${k.up ? "text-accent-600" : "text-error-600"}`}
-                >
-                  {k.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />} {k.trend}
-                </span>
+                {k.trend.label === null ? (
+                  <span className="text-xs text-gray-400">no prior data</span>
+                ) : (
+                  <span
+                    className={`text-xs flex items-center gap-0.5 ${
+                      k.trend.up ? "text-accent-600" : "text-error-600"
+                    }`}
+                  >
+                    {k.trend.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{" "}
+                    {k.trend.label}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -182,7 +265,7 @@ export function Analytics() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card p-5">
-          <h3 className="font-semibold mb-4">Bookings — Last 7 Days</h3>
+          <h3 className="font-semibold mb-4">Bookings — Last 7 Days (business time)</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={last7}>
               <CartesianGrid
@@ -248,7 +331,7 @@ export function Analytics() {
                 <tr>
                   <th className="px-4 py-3 font-medium text-gray-500">Staff</th>
                   <th className="px-4 py-3 font-medium text-gray-500">Bookings</th>
-                  <th className="px-4 py-3 font-medium text-gray-500">Revenue</th>
+                  <th className="px-4 py-3 font-medium text-gray-500">Revenue (paid)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -257,7 +340,7 @@ export function Analytics() {
                     <td className="px-4 py-3 font-medium">{s.name}</td>
                     <td className="px-4 py-3">{s.bookings}</td>
                     <td className="px-4 py-3">
-                      {formatCurrency(s.revenue, business?.currency || "USD")}
+                      {formatCurrency(s.revenue, business.currency || "USD")}
                     </td>
                   </tr>
                 ))}

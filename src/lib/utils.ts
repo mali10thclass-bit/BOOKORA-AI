@@ -119,6 +119,17 @@ export function zonedTimeToIso(date: string, time: string, timeZone: string): st
 }
 
 /**
+ * Pure calendar arithmetic on a YYYY-MM-DD date string (no timezone or
+ * DST involved — the date is interpreted in whatever calendar it already
+ * belongs to, e.g. the business timezone).
+ */
+export function shiftDate(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return dateStr;
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().split("T")[0];
+}
+
+/**
  * Inverse of zonedTimeToIso: express an ISO instant as wall-clock
  * date/time parts in the business timezone (for form prefill and display).
  */
