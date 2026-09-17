@@ -142,6 +142,8 @@ export type Database = {
       businesses: {
         Row: {
           address: string | null;
+          booking_buffer_minutes: number;
+          cancellation_notice_hours: number;
           created_at: string | null;
           created_by: string | null;
           currency: string | null;
@@ -155,6 +157,7 @@ export type Database = {
           plan: string | null;
           plan_status: string | null;
           primary_color: string | null;
+          reminder_lead_minutes: number;
           slug: string;
           timezone: string | null;
           updated_at: string | null;
@@ -162,6 +165,8 @@ export type Database = {
         };
         Insert: {
           address?: string | null;
+          booking_buffer_minutes?: number;
+          cancellation_notice_hours?: number;
           created_at?: string | null;
           created_by?: string | null;
           currency?: string | null;
@@ -175,6 +180,7 @@ export type Database = {
           plan?: string | null;
           plan_status?: string | null;
           primary_color?: string | null;
+          reminder_lead_minutes?: number;
           slug: string;
           timezone?: string | null;
           updated_at?: string | null;
@@ -182,6 +188,8 @@ export type Database = {
         };
         Update: {
           address?: string | null;
+          booking_buffer_minutes?: number;
+          cancellation_notice_hours?: number;
           created_at?: string | null;
           created_by?: string | null;
           currency?: string | null;
@@ -195,6 +203,7 @@ export type Database = {
           plan?: string | null;
           plan_status?: string | null;
           primary_color?: string | null;
+          reminder_lead_minutes?: number;
           slug?: string;
           timezone?: string | null;
           updated_at?: string | null;
@@ -245,6 +254,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "customers_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      holidays: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          holiday_date: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          holiday_date: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          holiday_date?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "holidays_business_id_fkey";
             columns: ["business_id"];
             isOneToOne: false;
             referencedRelation: "businesses";
@@ -538,7 +579,44 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_public_booking: {
+        Args: {
+          p_business_slug: string;
+          p_customer_email: string | null;
+          p_customer_name: string;
+          p_customer_phone: string | null;
+          p_end_time: string;
+          p_location_id: string | null;
+          p_service_id: string;
+          p_staff_id: string;
+          p_start_time: string;
+        };
+        Returns: Json;
+      };
+      get_available_slots: {
+        Args: {
+          p_business_slug: string;
+          p_date: string;
+          p_service_id: string;
+          p_staff_id: string;
+        };
+        Returns: Json;
+      };
       is_business_member: { Args: { b_id: string }; Returns: boolean };
+      public_create_booking: {
+        Args: {
+          p_business_slug: string;
+          p_customer_email: string | null;
+          p_customer_name: string;
+          p_customer_phone: string | null;
+          p_end_time: string;
+          p_location_id: string | null;
+          p_service_id: string;
+          p_staff_id: string;
+          p_start_time: string;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;
