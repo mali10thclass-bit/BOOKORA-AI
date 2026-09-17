@@ -18,6 +18,7 @@ import {
   Trash2,
   Edit,
   AlertCircle,
+  DollarSign,
 } from "lucide-react";
 
 export function Bookings() {
@@ -34,6 +35,7 @@ export function Bookings() {
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Booking | null>(null);
+  const [paying, setPaying] = useState<Booking | null>(null);
 
   const loadData = useCallback(async () => {
     if (!business) return;
@@ -267,6 +269,7 @@ export function Bookings() {
                             onClick={() => updateStatus(b.id, "confirmed")}
                             className="btn-ghost p-1.5 text-accent-600"
                             title="Confirm"
+                            aria-label="Confirm booking"
                           >
                             <Check size={16} />
                           </button>
@@ -276,6 +279,7 @@ export function Bookings() {
                             onClick={() => updateStatus(b.id, "completed")}
                             className="btn-ghost p-1.5 text-primary-600"
                             title="Complete"
+                            aria-label="Mark booking complete"
                           >
                             <Clock size={16} />
                           </button>
@@ -285,8 +289,19 @@ export function Bookings() {
                             onClick={() => updateStatus(b.id, "cancelled")}
                             className="btn-ghost p-1.5 text-error-600"
                             title="Cancel"
+                            aria-label="Cancel booking"
                           >
                             <XCircle size={16} />
+                          </button>
+                        )}
+                        {(b.payment_status === "unpaid" || b.payment_status === "partial") && (
+                          <button
+                            onClick={() => setPaying(b)}
+                            className="btn-ghost p-1.5 text-accent-600"
+                            title="Record payment"
+                            aria-label="Record payment"
+                          >
+                            <DollarSign size={16} />
                           </button>
                         )}
                         <button
@@ -332,7 +347,191 @@ export function Bookings() {
           }}
         />
       )}
+
+      {paying && (
+        <PaymentModal
+          booking={paying}
+          businessId={business!.id}
+          currency={business?.currency || "USD"}
+          onClose={() => setPaying(null)}
+          onSaved={() => {
+            setPaying(null);
+            loadData();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function PaymentModal({
+  booking,
+  businessId,
+  currency,
+  onClose,
+  onSaved,
+}: {
+  booking: Booking;
+  businessId: string;
+  currency: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [paid, setPaid] = useState<number | null>(null);
+  const [loadingPaid, setLoadingPaid] = useState(true);
+  const [amount, setAmount] = useState<string>("");
+  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "online">("cash");
+  const [reference, setReference] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const total = Number(booking.price || 0);
+
+  // Sum of recorded payments for this booking (to show the remaining
+  // balance and prefill the field).
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoadingPaid(true);
+      const { data, error: pError } = await supabase
+        .from("payments")
+        .select("amount, status")
+        .eq("booking_id", booking.id);
+      if (cancelled) return;
+      if (pError) {
+        console.error("Failed to load payments:", pError);
+        setPaid(0);
+      } else {
+        setPaid(
+          (data || []).reduce(
+            (s: number, p: { amount: number | null; status: string | null }) =>
+              p.status !== "refunded" ? s + Number(p.amount || 0) : s,
+            0,
+          ),
+        );
+      }
+      setLoadingPaid(false);
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [booking.id]);
+
+  const remaining = Math.max(0, total - (paid || 0));
+
+  const handleSave = async () => {
+    setError(null);
+    const amt = Number(amount);
+    if (!amount || Number.isNaN(amt) || amt <= 0) {
+      setError("Enter a payment amount greater than zero.");
+      return;
+    }
+    if (paid !== null && amt > remaining + 0.0001) {
+      setError(
+        `This would overpay the booking. Remaining balance is ${formatCurrency(remaining, currency)}.`,
+      );
+      return;
+    }
+    setSaving(true);
+    // The database rejects negative amounts and overpayments; we surface
+    // those messages here.
+    const { error: payError } = await supabase.from("payments").insert({
+      business_id: businessId,
+      booking_id: booking.id,
+      amount: amt,
+      method,
+      reference: reference || null,
+      status: "paid",
+    });
+    if (payError) {
+      console.error("Failed to record payment:", payError);
+      setError(payError.message);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    onSaved();
+  };
+
+  return (
+    <Modal open onClose={onClose} title="Record Payment" size="sm">
+      <div className="space-y-4">
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm space-y-1">
+          <p className="font-medium">{booking.customer?.name || "—"}</p>
+          <p className="text-gray-500">{booking.service?.name || "—"}</p>
+          {loadingPaid ? (
+            <p className="text-gray-400">Loading payment history…</p>
+          ) : (
+            <>
+              <p>
+                Total: <span className="font-medium">{formatCurrency(total, currency)}</span>
+              </p>
+              <p>
+                Paid: <span className="font-medium">{formatCurrency(paid || 0, currency)}</span>
+              </p>
+              <p>
+                Remaining:{" "}
+                <span className="font-medium text-accent-600">
+                  {formatCurrency(remaining, currency)}
+                </span>
+              </p>
+            </>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Amount</label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              className="input"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder={remaining > 0 ? String(remaining) : "0"}
+              required
+            />
+          </div>
+          <div>
+            <label className="label">Method</label>
+            <select
+              className="input"
+              value={method}
+              onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "online")}
+            >
+              <option value="cash">Cash</option>
+              <option value="card">Card</option>
+              <option value="transfer">Bank transfer</option>
+              <option value="online">Online</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="label">Reference (optional)</label>
+          <input
+            className="input"
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+            placeholder="e.g. receipt or transaction id"
+          />
+        </div>
+        {error && <p className="text-sm text-error-600">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-secondary">
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || loadingPaid}
+            className="btn-primary"
+          >
+            {saving ? "Saving..." : "Record Payment"}
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
