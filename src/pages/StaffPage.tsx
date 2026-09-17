@@ -176,12 +176,14 @@ export function StaffPage() {
                     setShowForm(true);
                   }}
                   className="btn-ghost p-1.5"
+                  aria-label="Edit staff member"
                 >
                   <Edit size={16} />
                 </button>
                 <button
                   onClick={() => deleteStaff(s.id)}
                   className="btn-ghost p-1.5 text-error-600"
+                  aria-label="Delete staff member"
                 >
                   <Trash2 size={16} />
                 </button>

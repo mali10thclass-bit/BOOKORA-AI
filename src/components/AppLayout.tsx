@@ -85,6 +85,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded"
+            aria-label="Close menu"
           >
             <X size={18} />
           </button>
@@ -124,6 +125,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               onClick={handleSignOut}
               className="hover:bg-gray-200 dark:hover:bg-gray-700 p-1.5 rounded"
               title={t("sign_out")}
+              aria-label={t("sign_out")}
             >
               <LogOut size={16} />
             </button>
@@ -147,6 +149,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-800 p-1.5 rounded"
+              aria-label="Open menu"
+              aria-expanded={sidebarOpen}
             >
               <Menu size={20} />
             </button>
@@ -170,6 +174,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 onClick={() => setLangOpen(!langOpen)}
                 className="hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded"
                 title={t("select_language")}
+                aria-label={t("select_language")}
+                aria-expanded={langOpen}
               >
                 <Globe size={18} />
               </button>
@@ -203,6 +209,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               onClick={toggle}
               className="hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded"
               title={theme === "light" ? t("dark_mode") : t("light_mode")}
+              aria-label={theme === "light" ? t("dark_mode") : t("light_mode")}
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>

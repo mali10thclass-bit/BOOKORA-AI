@@ -161,12 +161,14 @@ export function ServicesPage() {
                       setShowForm(true);
                     }}
                     className="btn-ghost p-1.5"
+                    aria-label="Edit service"
                   >
                     <Edit size={16} />
                   </button>
                   <button
                     onClick={() => deleteService(s.id)}
                     className="btn-ghost p-1.5 text-error-600"
+                    aria-label="Delete service"
                   >
                     <Trash2 size={16} />
                   </button>

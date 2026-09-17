@@ -236,12 +236,14 @@ export function Customers() {
                             setShowForm(true);
                           }}
                           className="btn-ghost p-1.5"
+                          aria-label="Edit customer"
                         >
                           <Edit size={16} />
                         </button>
                         <button
                           onClick={() => deleteCustomer(c.id)}
                           className="btn-ghost p-1.5 text-error-600"
+                          aria-label="Delete customer"
                         >
                           <Trash2 size={16} />
                         </button>
