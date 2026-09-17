@@ -22,12 +22,12 @@ npm run dev          # http://localhost:8080
 
 Commands:
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the dev server on port 8080 |
-| `npm run build` | Production build |
-| `npx tsgo --noEmit` | TypeScript typecheck |
-| `npm run lint` | Lint |
+| Command             | What it does                      |
+| ------------------- | --------------------------------- |
+| `npm run dev`       | Start the dev server on port 8080 |
+| `npm run build`     | Production build                  |
+| `npx tsgo --noEmit` | TypeScript typecheck              |
+| `npm run lint`      | Lint                              |
 
 ## Database
 
@@ -56,19 +56,19 @@ Never commit real keys. Service-role keys are not used by this codebase.
 
 ## Feature status (honest)
 
-| Area | State |
-| --- | --- |
-| Sign up / sign in / session / protected routes | Working, tested |
-| Business onboarding (business, first service, first staff, working hours) | Working, tested |
-| Business data isolation (RLS) | Working, tested with two businesses |
-| Dashboard, services, staff, customers, bookings, analytics screens | Working |
-| AI business assistant (English + Urdu, real data) | Working, tested |
-| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes | Working |
-| Public booking page | Present, server-side validation hardening not complete |
-| Manual payment tracking (deposits, balances) | Database-level only |
-| Online card payments (Stripe/Paddle), refunds, receipts | **Not implemented** |
-| Email / SMS / push notifications and reminders | **Not delivered** — no provider configured |
-| Plan limits (Free / Pro / Ultimate) | UI only, not enforced server-side |
+| Area                                                                      | State                                                  |
+| ------------------------------------------------------------------------- | ------------------------------------------------------ |
+| Sign up / sign in / session / protected routes                            | Working, tested                                        |
+| Business onboarding (business, first service, first staff, working hours) | Working, tested                                        |
+| Business data isolation (RLS)                                             | Working, tested with two businesses                    |
+| Dashboard, services, staff, customers, bookings, analytics screens        | Working                                                |
+| AI business assistant (English + Urdu, real data)                         | Working, tested                                        |
+| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes                  | Working                                                |
+| Public booking page                                                       | Present, server-side validation hardening not complete |
+| Manual payment tracking (deposits, balances)                              | Database-level only                                    |
+| Online card payments (Stripe/Paddle), refunds, receipts                   | **Not implemented**                                    |
+| Email / SMS / push notifications and reminders                            | **Not delivered** — no provider configured             |
+| Plan limits (Free / Pro / Ultimate)                                       | UI only, not enforced server-side                      |
 
 Anything marked not implemented is not wired to a real provider. Do not treat
 it as production-ready.

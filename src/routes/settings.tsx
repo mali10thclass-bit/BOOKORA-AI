@@ -9,7 +9,10 @@ export const Route = createFileRoute("/settings")({
       { title: "Settings | BOOKORA AI" },
       { name: "description", content: "Business profile, branding, timezone, language and theme." },
       { property: "og:title", content: "Settings | BOOKORA AI" },
-      { property: "og:description", content: "Business profile, branding, timezone, language and theme." },
+      {
+        property: "og:description",
+        content: "Business profile, branding, timezone, language and theme.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
