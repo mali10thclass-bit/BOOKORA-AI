@@ -12,4 +12,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    server: {
+      // The dev preview is served through a proxy host that is different
+      // from localhost. Vite 8 blocks unknown Host headers by default,
+      // which 403s the preview. Dev-server only (no effect on builds).
+      allowedHosts: true,
+    },
+  },
 });
