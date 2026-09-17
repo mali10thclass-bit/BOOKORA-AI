@@ -5,27 +5,27 @@ import { useI18n } from "@/context/I18nContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { Modal } from "@/components/Modal";
-import { formatCurrency, formatDate, formatTime, downloadCSV } from "@/lib/utils";
+import { formatCurrency, downloadCSV, zonedTimeToIso, isoToZonedParts } from "@/lib/utils";
 import type { Booking, Service, Staff, Customer, BookingStatus } from "@/types";
 import {
   CalendarDays,
   Plus,
   Search,
   Download,
-  Filter,
-  X,
   Check,
   Clock,
   XCircle,
   Trash2,
   Edit,
-  ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 
 export function Bookings() {
   const { business } = useAuth();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -37,16 +37,25 @@ export function Bookings() {
 
   const loadData = useCallback(async () => {
     if (!business) return;
+    const businessId = business.id;
     const [b, s, st, c] = await Promise.all([
       supabase
         .from("bookings")
         .select("*, service:services(*), staff:staff(*), customer:customers(*)")
-        .eq("business_id", business.id)
+        .eq("business_id", businessId)
         .order("start_time", { ascending: false }),
-      supabase.from("services").select("*").eq("business_id", business.id).eq("is_active", true),
-      supabase.from("staff").select("*").eq("business_id", business.id).eq("is_active", true),
-      supabase.from("customers").select("*").eq("business_id", business.id),
+      supabase.from("services").select("*").eq("business_id", businessId).eq("is_active", true),
+      supabase.from("staff").select("*").eq("business_id", businessId).eq("is_active", true),
+      supabase.from("customers").select("*").eq("business_id", businessId),
     ]);
+    const firstError = b.error || s.error || st.error || c.error;
+    if (firstError) {
+      console.error("Failed to load bookings:", firstError);
+      setLoadError("Failed to load bookings. Please try again.");
+      setLoading(false);
+      return;
+    }
+    setLoadError(null);
     setBookings((b.data || []) as unknown as Booking[]);
     setServices(s.data || []);
     setStaffList(st.data || []);
@@ -69,30 +78,57 @@ export function Bookings() {
   });
 
   const handleExport = () => {
+    // Export in the business timezone so rows match what the business sees.
+    const tz = business?.timezone || "UTC";
     downloadCSV(
       "bookings.csv",
-      filtered.map((b) => ({
-        customer: b.customer?.name || "",
-        service: b.service?.name || "",
-        staff: b.staff?.name || "",
-        date: formatDate(b.start_time),
-        time: formatTime(b.start_time),
-        status: b.status,
-        payment: b.payment_status,
-        price: b.price,
-      })),
+      filtered.map((b) => {
+        const parts = isoToZonedParts(b.start_time, tz);
+        return {
+          customer: b.customer?.name || "",
+          service: b.service?.name || "",
+          staff: b.staff?.name || "",
+          date: parts.date,
+          time: parts.time,
+          status: b.status,
+          payment: b.payment_status,
+          price: b.price,
+        };
+      }),
     );
   };
 
   const updateStatus = async (id: string, status: BookingStatus) => {
-    await supabase.from("bookings").update({ status }).eq("id", id);
+    const { error: updError } = await supabase.from("bookings").update({ status }).eq("id", id);
+    if (updError) {
+      console.error("Failed to update booking status:", updError);
+      setActionError(`Could not update the booking: ${updError.message}`);
+      return;
+    }
+    setActionError(null);
     loadData();
   };
 
   const deleteBooking = async (id: string) => {
-    await supabase.from("bookings").delete().eq("id", id);
+    const { error: delError } = await supabase.from("bookings").delete().eq("id", id);
+    if (delError) {
+      console.error("Failed to delete booking:", delError);
+      setActionError(`Could not delete the booking: ${delError.message}`);
+      return;
+    }
+    setActionError(null);
     loadData();
   };
+
+  if (!business) {
+    return (
+      <EmptyState
+        icon={CalendarDays}
+        title="No business found"
+        description="Complete the onboarding setup to manage bookings."
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -102,8 +138,34 @@ export function Bookings() {
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="mx-auto mb-3 text-error-600" size={32} />
+          <p className="text-gray-600 dark:text-gray-300">{loadError}</p>
+          <button onClick={loadData} className="btn-secondary mt-3">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-error-300 bg-error-50 dark:bg-error-900/20 dark:border-error-800 px-4 py-3 text-sm text-error-700 dark:text-error-300">
+          <span>{actionError}</span>
+          <button
+            onClick={() => setActionError(null)}
+            className="text-error-500 hover:text-error-700"
+            aria-label="Dismiss error"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">{t("bookings")}</h1>
         <div className="flex gap-2">
@@ -182,8 +244,15 @@ export function Bookings() {
                       {b.staff?.name || "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <div>{formatDate(b.start_time)}</div>
-                      <div className="text-xs text-gray-400">{formatTime(b.start_time)}</div>
+                      {(() => {
+                        const parts = isoToZonedParts(b.start_time, business?.timezone || "UTC");
+                        return (
+                          <>
+                            <div>{parts.date}</div>
+                            <div className="text-xs text-gray-400">{parts.time}</div>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={b.status} />
@@ -251,6 +320,7 @@ export function Bookings() {
           staffList={staffList}
           customers={customers}
           businessId={business!.id}
+          timezone={business?.timezone || "UTC"}
           onClose={() => {
             setShowCreate(false);
             setEditing(null);
@@ -272,6 +342,7 @@ function BookingForm({
   staffList,
   customers,
   businessId,
+  timezone,
   onClose,
   onSaved,
 }: {
@@ -280,17 +351,22 @@ function BookingForm({
   staffList: Staff[];
   customers: Customer[];
   businessId: string;
+  timezone: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
   const [serviceId, setServiceId] = useState(booking?.service_id || "");
   const [staffId, setStaffId] = useState(booking?.staff_id || "");
   const [customerId, setCustomerId] = useState(booking?.customer_id || "");
-  const [date, setDate] = useState(
-    booking ? booking.start_time.split("T")[0] : new Date().toISOString().split("T")[0],
+  // Date/time are always edited in the business timezone; the wall-clock
+  // values are converted to a UTC instant at submit time.
+  const [date, setDate] = useState(() =>
+    booking
+      ? isoToZonedParts(booking.start_time, timezone).date
+      : isoToZonedParts(new Date().toISOString(), timezone).date,
   );
-  const [time, setTime] = useState(
-    booking ? formatTime(booking.start_time).replace(/ /g, "") : "09:00",
+  const [time, setTime] = useState(() =>
+    booking ? isoToZonedParts(booking.start_time, timezone).time : "09:00",
   );
   const [notes, setNotes] = useState(booking?.notes || "");
   const [newCustomerName, setNewCustomerName] = useState("");
@@ -308,13 +384,28 @@ function BookingForm({
       setSaving(false);
       return;
     }
+    if (!staffId) {
+      setError("Select a staff member");
+      setSaving(false);
+      return;
+    }
 
-    const startTime = new Date(`${date}T${time.length === 4 ? "0" + time : time}:00`);
-    const endTime = new Date(startTime.getTime() + service.duration_minutes * 60000);
+    let startIso: string;
+    let endIso: string;
+    try {
+      startIso = zonedTimeToIso(date, time, timezone);
+      endIso = new Date(
+        new Date(startIso).getTime() + service.duration_minutes * 60000,
+      ).toISOString();
+    } catch {
+      setError("Enter a valid date and time");
+      setSaving(false);
+      return;
+    }
 
     let custId = customerId;
     if (!custId && newCustomerName) {
-      const { data: newCust } = await supabase
+      const { data: newCust, error: custError } = await supabase
         .from("customers")
         .insert({
           business_id: businessId,
@@ -322,6 +413,12 @@ function BookingForm({
         })
         .select()
         .single();
+      if (custError) {
+        console.error("Failed to create customer:", custError);
+        setError(`Could not create the customer: ${custError.message}`);
+        setSaving(false);
+        return;
+      }
       custId = newCust?.id ?? "";
     }
     if (!custId) {
@@ -335,18 +432,25 @@ function BookingForm({
       service_id: serviceId,
       staff_id: staffId,
       customer_id: custId,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
+      start_time: startIso,
+      end_time: endIso,
       price: service.price,
       notes,
       status: booking?.status || "pending",
       payment_status: booking?.payment_status || "unpaid",
     };
 
-    if (booking) {
-      await supabase.from("bookings").update(payload).eq("id", booking.id);
-    } else {
-      await supabase.from("bookings").insert(payload);
+    const { error: saveError } = booking
+      ? await supabase.from("bookings").update(payload).eq("id", booking.id)
+      : await supabase.from("bookings").insert(payload);
+    if (saveError) {
+      // Includes database-level conflict detection messages
+      // ("overlaps with an existing appointment"), cross-tenant guards,
+      // and working-hours validation.
+      console.error("Failed to save booking:", saveError);
+      setError(saveError.message);
+      setSaving(false);
+      return;
     }
     setSaving(false);
     onSaved();

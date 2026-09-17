@@ -118,6 +118,40 @@ export function zonedTimeToIso(date: string, time: string, timeZone: string): st
   }
 }
 
+/**
+ * Inverse of zonedTimeToIso: express an ISO instant as wall-clock
+ * date/time parts in the business timezone (for form prefill and display).
+ */
+export function isoToZonedParts(iso: string, timeZone: string): { date: string; time: string } {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return { date: "", time: "00:00" };
+  const safeZone = timeZone && timeZone !== "Invalid Date String" ? timeZone : "UTC";
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: safeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).formatToParts(d);
+    const get = (t: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === t)?.value ?? "00";
+    const hour = get("hour") === "24" ? "00" : get("hour");
+    return {
+      date: `${get("year")}-${get("month")}-${get("day")}`,
+      time: `${hour}:${get("minute")}`,
+    };
+  } catch {
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return {
+      date: `${local.getUTCFullYear()}-${p(local.getUTCMonth() + 1)}-${p(local.getUTCDate())}`,
+      time: `${p(local.getUTCHours())}:${p(local.getUTCMinutes())}`,
+    };
+  }
+}
+
 export function getPlanLimits(plan: PlanTier | string | null | undefined) {
   const limits = {
     free: {
