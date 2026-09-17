@@ -157,7 +157,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {(Object.keys(languageNames) as Language[]).map((l) => (
                       <button
                         key={l}
-                        onClick={() { setLang(l); setLangOpen(false) }}
+                        onClick={() => { setLang(l); setLangOpen(false) }}
                         className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
                           lang === l
                             ? 'bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium'
