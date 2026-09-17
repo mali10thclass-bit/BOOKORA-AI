@@ -42,6 +42,9 @@ export function Dashboard() {
   useEffect(() => {
     if (!business) return
 
+    // Capture after the null guard: hoisted function declarations reset
+    // TypeScript's narrowing of `business`, so use a local const.
+    const businessId = business.id
     async function load() {
       try {
         setError(null)
@@ -49,22 +52,22 @@ export function Dashboard() {
           supabase
             .from('bookings')
             .select('*, service:services(*), staff:staff(*), customer:customers(*)')
-            .eq('business_id', business.id)
+            .eq('business_id', businessId)
             .order('created_at', { ascending: false })
             .limit(10),
           supabase
             .from('customers')
             .select('id', { count: 'exact', head: true })
-            .eq('business_id', business.id),
+            .eq('business_id', businessId),
           supabase
             .from('staff')
             .select('id', { count: 'exact', head: true })
-            .eq('business_id', business.id)
+            .eq('business_id', businessId)
             .eq('is_active', true),
           supabase
             .from('bookings')
             .select('id', { count: 'exact', head: true })
-            .eq('business_id', business.id)
+            .eq('business_id', businessId)
             .gte('start_time', new Date().toISOString().split('T')[0]),
         ])
 
