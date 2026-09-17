@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react";
 import { useParams } from "@/lib/router-compat";
 import { supabase } from "@/lib/supabase";
-import { formatCurrency, formatTime } from "@/lib/utils";
+import { formatCurrency, zonedTimeToIso } from "@/lib/utils";
 import type { Service, Staff, Business } from "@/types";
-import { Calendar, Clock, Check, ChevronRight, Sparkles, User } from "lucide-react";
-import { format, addDays, isToday, isSameDay } from "date-fns";
+import { Check, ChevronRight, Clock, Loader2 } from "lucide-react";
+import { format, addDays, isSameDay } from "date-fns";
+
+interface Confirmation {
+  service_name: string;
+  staff_name: string;
+  start_time: string;
+  end_time: string;
+  price: number | string;
+  currency: string | null;
+}
 
 export function PublicBooking() {
   const { slug } = useParams<{ slug: string }>();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
@@ -16,106 +26,177 @@ export function PublicBooking() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState<Confirmation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState(false);
 
+  // Load business + its active services/staff (anon-scoped by RLS).
   useEffect(() => {
     async function load() {
-      const { data: biz } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("slug", slug || "")
-        .maybeSingle();
-      if (!biz) {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const { data: biz, error: bizError } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("slug", slug || "")
+          .maybeSingle();
+        if (bizError) {
+          setLoadError("We couldn't load this booking page. Please try again in a moment.");
+          return;
+        }
+        if (!biz) {
+          return; // "Business not found" view
+        }
+        setBusiness(biz as Business);
+        const [s, st] = await Promise.all([
+          supabase.from("services").select("*").eq("business_id", biz.id).eq("is_active", true),
+          supabase.from("staff").select("*").eq("business_id", biz.id).eq("is_active", true),
+        ]);
+        if (s.error || st.error) {
+          setLoadError("We couldn't load the available services. Please try again.");
+          return;
+        }
+        setServices((s.data as Service[]) || []);
+        setStaffList((st.data as Staff[]) || []);
+      } catch (err) {
+        console.error("Public booking load error:", err);
+        setLoadError("We couldn't load this booking page. Please try again in a moment.");
+      } finally {
         setLoading(false);
-        return;
       }
-      setBusiness(biz as Business);
-      const [s, st] = await Promise.all([
-        supabase.from("services").select("*").eq("business_id", biz.id).eq("is_active", true),
-        supabase.from("staff").select("*").eq("business_id", biz.id).eq("is_active", true),
-      ]);
-      setServices(s.data || []);
-      setStaffList(st.data || []);
-      setLoading(false);
     }
     load();
   }, [slug]);
 
-  const timeSlots = [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "11:30",
-    "13:00",
-    "13:30",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-  ];
+  // Fetch real availability for the selected service + staff + date.
+  // Availability always comes from the database (working hours, buffer,
+  // holidays, existing bookings) — never from a hardcoded slot list.
+  useEffect(() => {
+    if (step < 2 || !business || !selectedService || !selectedStaff) return;
+    // Capture after the guard: hoisted function declarations reset
+    // TypeScript's narrowing of the outer consts.
+    const slug = business.slug;
+    const staffId = selectedStaff.id;
+    const serviceId = selectedService.id;
+    let cancelled = false;
+    async function loadSlots() {
+      setSlotsLoading(true);
+      setSlotsError(null);
+      const { data, error: rpcError } = await supabase.rpc("get_available_slots", {
+        p_business_slug: slug,
+        p_staff_id: staffId,
+        p_service_id: serviceId,
+        p_date: format(selectedDate, "yyyy-MM-dd"),
+      });
+      if (cancelled) return;
+      if (rpcError) {
+        console.error("get_available_slots error:", rpcError);
+        setSlots([]);
+        setSlotsError("We couldn't load the available times. Please try another day.");
+      } else {
+        setSlots(Array.isArray(data) ? (data as string[]) : []);
+      }
+      setSlotsLoading(false);
+    }
+    loadSlots();
+    return () => {
+      cancelled = true;
+    };
+  }, [business, selectedService, selectedStaff, selectedDate, step]);
+
+  // Reset the time when the context changes.
+  useEffect(() => {
+    setSelectedTime("");
+  }, [selectedDate, selectedStaff, selectedService]);
 
   const handleConfirm = async () => {
     if (!business || !selectedService || !selectedStaff || !selectedTime) return;
-    if (!name) {
-      setError("Please enter your name");
+    setError(null);
+    if (name.trim().length < 2) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address (or leave it empty).");
       return;
     }
     setBooking(true);
-    setError(null);
 
-    const startTime = new Date(selectedDate);
-    const [h, m] = selectedTime.split(":");
-    startTime.setHours(Number(h), Number(m), 0, 0);
-    const endTime = new Date(startTime.getTime() + selectedService.duration_minutes * 60000);
+    // Wall-clock time in the business timezone -> instant. The server
+    // re-validates everything (working hours, conflicts, business rules).
+    const startIso = zonedTimeToIso(
+      format(selectedDate, "yyyy-MM-dd"),
+      selectedTime,
+      business.timezone || "UTC",
+    );
+    const endIso = new Date(
+      new Date(startIso).getTime() + selectedService.duration_minutes * 60000,
+    ).toISOString();
 
-    // Create customer
-    const { data: customer } = await supabase
-      .from("customers")
-      .insert({
-        business_id: business.id,
-        name,
-        email: email || null,
-        phone: phone || null,
-      })
-      .select()
-      .single();
-
-    if (!customer) {
-      setError("Failed to create customer");
-      setBooking(false);
-      return;
-    }
-
-    await supabase.from("bookings").insert({
-      business_id: business.id,
-      service_id: selectedService.id,
-      staff_id: selectedStaff.id,
-      customer_id: customer.id,
-      start_time: startTime.toISOString(),
-      end_time: endTime.toISOString(),
-      price: selectedService.price,
-      status: "confirmed",
-      payment_status: "unpaid",
+    const { data, error: rpcError } = await supabase.rpc("create_public_booking", {
+      p_business_slug: business.slug,
+      p_service_id: selectedService.id,
+      p_staff_id: selectedStaff.id,
+      p_location_id: null,
+      p_start_time: startIso,
+      p_end_time: endIso,
+      p_customer_name: name.trim(),
+      p_customer_email: email.trim() || null,
+      p_customer_phone: phone.trim() || null,
     });
 
     setBooking(false);
-    setConfirmed(true);
+    // The RPC is typed as returning generic Json; the server contract is
+    // the shape below (validated on the database side).
+    const result = data as unknown as
+      (Confirmation & { success?: boolean; error?: string; booking_id?: string }) | undefined;
+    if (rpcError) {
+      console.error("create_public_booking transport error:", rpcError);
+      setError("Your booking could not be submitted. Please try again.");
+      return;
+    }
+    if (!result || result.success !== true || result.error) {
+      // The server rejected the booking (slot taken, closed day, ...).
+      setError(result?.error || "Your booking could not be made. Please pick a different time.");
+      return;
+    }
+    setConfirmed({
+      service_name: result.service_name,
+      staff_name: result.staff_name,
+      start_time: result.start_time,
+      end_time: result.end_time,
+      price: result.price,
+      currency: result.currency,
+    });
   };
 
   if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    );
+
+  if (loadError)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-gray-700 dark:text-gray-200">
+            Something went wrong
+          </p>
+          <p className="text-sm text-gray-500 mt-1">{loadError}</p>
+          <button onClick={() => window.location.reload()} className="btn-primary mt-4">
+            Try again
+          </button>
+        </div>
       </div>
     );
 
@@ -136,13 +217,14 @@ export function PublicBooking() {
           <div className="w-16 h-16 rounded-full bg-accent-100 dark:bg-accent-900/30 flex items-center justify-center mx-auto mb-4">
             <Check size={32} className="text-accent-600" />
           </div>
-          <h2 className="text-xl font-bold">Booking Confirmed!</h2>
+          <h2 className="text-xl font-bold">Booking Requested!</h2>
           <p className="text-sm text-gray-500 mt-2">
-            {selectedService?.name} with {selectedStaff?.name} on{" "}
-            {format(selectedDate, "EEEE, MMMM d")} at {selectedTime}
+            {confirmed.service_name} with {confirmed.staff_name} on{" "}
+            {format(new Date(confirmed.start_time), "EEEE, MMMM d")} at{" "}
+            {format(new Date(confirmed.start_time), "h:mm a")}
           </p>
           <p className="text-xs text-gray-400 mt-4">
-            We look forward to seeing you at {business.name}!
+            Your booking is pending and will be confirmed by {business.name}.
           </p>
         </div>
       </div>
@@ -238,25 +320,29 @@ export function PublicBooking() {
             <button onClick={() => setStep(0)} className="text-sm text-gray-500 mb-2">
               ← Back
             </button>
-            {staffList.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  setSelectedStaff(s);
-                  setStep(2);
-                }}
-                className="card w-full p-4 flex items-center gap-3 hover:border-primary-300 transition-colors text-left"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 font-medium">
-                  {s.name.charAt(0)}
-                </div>
-                <div>
-                  <p className="font-medium">{s.name}</p>
-                  {s.bio && <p className="text-xs text-gray-500">{s.bio}</p>}
-                </div>
-                <ChevronRight size={18} className="text-gray-400 ml-auto" />
-              </button>
-            ))}
+            {staffList.length === 0 ? (
+              <p className="text-center text-gray-400 py-12">No staff available</p>
+            ) : (
+              staffList.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    setSelectedStaff(s);
+                    setStep(2);
+                  }}
+                  className="card w-full p-4 flex items-center gap-3 hover:border-primary-300 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 font-medium">
+                    {s.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{s.name}</p>
+                    {s.bio && <p className="text-xs text-gray-500">{s.bio}</p>}
+                  </div>
+                  <ChevronRight size={18} className="text-gray-400 ml-auto" />
+                </button>
+              ))
+            )}
           </div>
         )}
 
@@ -289,24 +375,36 @@ export function PublicBooking() {
               <h3 className="font-medium text-sm mb-3">
                 Available times — {format(selectedDate, "MMM d")}
               </h3>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {timeSlots.map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => {
-                      setSelectedTime(time);
-                      setStep(3);
-                    }}
-                    className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedTime === time
-                        ? "bg-primary-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
+              {slotsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 size={20} className="animate-spin text-primary-600" />
+                </div>
+              ) : slotsError ? (
+                <p className="text-sm text-gray-500 py-4">{slotsError}</p>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-gray-500 py-4">
+                  No available times on this day. Please try another day.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {slots.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => {
+                        setSelectedTime(time);
+                        setStep(3);
+                      }}
+                      className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                        selectedTime === time
+                          ? "bg-primary-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -328,8 +426,11 @@ export function PublicBooking() {
                 </p>
               </div>
               <div>
-                <label className="label">Your Name</label>
+                <label className="label" htmlFor="pb-name">
+                  Your Name
+                </label>
                 <input
+                  id="pb-name"
                   className="input"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -338,8 +439,11 @@ export function PublicBooking() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Email</label>
+                  <label className="label" htmlFor="pb-email">
+                    Email
+                  </label>
                   <input
+                    id="pb-email"
                     type="email"
                     className="input"
                     value={email}
@@ -347,8 +451,11 @@ export function PublicBooking() {
                   />
                 </div>
                 <div>
-                  <label className="label">Phone</label>
+                  <label className="label" htmlFor="pb-phone">
+                    Phone
+                  </label>
                   <input
+                    id="pb-phone"
                     className="input"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}

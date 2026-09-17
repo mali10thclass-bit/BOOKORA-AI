@@ -68,6 +68,56 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/**
+ * Convert a business-local wall-clock time to an ISO instant (UTC string).
+ *
+ * `date` is `YYYY-MM-DD`, `time` is `HH:MM` (24h), `timeZone` is an IANA
+ * zone (e.g. "Asia/Karachi") read from the business settings. This is the
+ * client-side mirror of what the database does with
+ * `timestamp AT TIME ZONE <business_timezone>`; the server re-validates
+ * everything, so the worst case here is a rejected (not a misplaced)
+ * booking.
+ */
+export function zonedTimeToIso(date: string, time: string, timeZone: string): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const [hh, mm] = time.split(":").map(Number);
+  if (!y || !m || !d || hh === undefined || mm === undefined) {
+    throw new Error("Invalid date/time for zonedTimeToIso");
+  }
+  const safeZone = timeZone && timeZone !== "Invalid Date String" ? timeZone : "UTC";
+  try {
+    // 1. Pretend the wall-clock time is UTC.
+    const asUtc = Date.UTC(y, m - 1, d, hh, mm, 0);
+    // 2. See what the target zone displays for that instant.
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: safeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).formatToParts(new Date(asUtc));
+    const get = (t: Intl.DateTimeFormatPartTypes) =>
+      Number(parts.find((p) => p.type === t)?.value ?? 0);
+    const zoneSeenAsUtc = Date.UTC(
+      get("year"),
+      get("month") - 1,
+      get("day"),
+      get("hour") % 24,
+      get("minute"),
+      get("second"),
+    );
+    // 3. The difference is the zone offset at that instant; remove it.
+    return new Date(asUtc - (zoneSeenAsUtc - asUtc)).toISOString();
+  } catch {
+    // Unknown/invalid IANA zone: fall back to treating the wall-clock
+    // time as UTC rather than crashing the booking flow.
+    return new Date(Date.UTC(y, m - 1, d, hh, mm, 0)).toISOString();
+  }
+}
+
 export function getPlanLimits(plan: PlanTier | string | null | undefined) {
   const limits = {
     free: {
