@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +10,7 @@ export function OnboardingWizard() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [bizData, setBizData] = useState({
     name: business?.name || "",
@@ -31,11 +32,20 @@ export function OnboardingWizard() {
     { icon: Calendar, title: "Ready", desc: "You are all set!" },
   ];
 
+  // Retry safety: remember which optional steps already succeeded so a
+  // re-run after a partial failure does not duplicate them.
+  const done = useRef({
+    service: false,
+    staff: false,
+    hours: false,
+    businessId: null as string | null,
+    staffId: null as string | null,
+  });
+
   const handleFinish = async () => {
     if (!user) return;
     setSaving(true);
-
-    let businessId = business?.id ?? null;
+    setError(null);
 
     const payload = {
       name: bizData.name,
@@ -48,8 +58,19 @@ export function OnboardingWizard() {
       onboarding_completed: true,
     };
 
+    let businessId = business?.id ?? done.current.businessId;
+
     if (businessId) {
-      await supabase.from("businesses").update(payload).eq("id", businessId);
+      const { error: updError } = await supabase
+        .from("businesses")
+        .update(payload)
+        .eq("id", businessId);
+      if (updError) {
+        console.error("Onboarding: failed to update business:", updError);
+        setError(`Could not save your business details: ${updError.message}`);
+        setSaving(false);
+        return;
+      }
     } else {
       // First run: create the business, then link the signed-in user as its owner.
       const slug = `${slugify(bizData.name || "business")}-${Math.random().toString(36).slice(2, 7)}`;
@@ -60,12 +81,17 @@ export function OnboardingWizard() {
         .single();
 
       if (createError || !created) {
+        console.error("Onboarding: failed to create business:", createError);
+        setError(createError?.message || "Could not create your business. Please try again.");
         setSaving(false);
         return;
       }
       businessId = created.id;
+      done.current.businessId = businessId;
 
-      await supabase.from("business_members").insert({
+      // Linking the owner is mandatory: without it the user would not be
+      // able to see the business on the next load.
+      const { error: memberError } = await supabase.from("business_members").insert({
         business_id: businessId,
         user_id: user.id,
         email: user.email ?? bizData.email ?? "",
@@ -73,21 +99,38 @@ export function OnboardingWizard() {
         role: "owner",
         invite_status: "accepted",
       });
+      if (memberError) {
+        console.error("Onboarding: failed to link owner:", memberError);
+        setError(
+          `Your business was created, but we could not link it to your account (${memberError.message}). Try again, or contact support if this persists.`,
+        );
+        setSaving(false);
+        return;
+      }
     }
 
-    // Create service
-    if (serviceData.name) {
-      await supabase.from("services").insert({
+    // Create service (optional step, but a failure must not be silent).
+    if (serviceData.name && !done.current.service) {
+      const { error: svcError } = await supabase.from("services").insert({
         business_id: businessId,
         name: serviceData.name,
         duration_minutes: serviceData.duration,
         price: serviceData.price,
       });
+      if (svcError) {
+        console.error("Onboarding: failed to create service:", svcError);
+        setError(
+          `Your business was saved, but the service could not be added: ${svcError.message}`,
+        );
+        setSaving(false);
+        return;
+      }
+      done.current.service = true;
     }
 
-    // Create staff
-    if (staffData.name) {
-      const { data: newStaff } = await supabase
+    // Create staff (optional step).
+    if (staffData.name && !done.current.staff) {
+      const { data: newStaff, error: staffError } = await supabase
         .from("staff")
         .insert({
           business_id: businessId,
@@ -99,18 +142,41 @@ export function OnboardingWizard() {
         .select()
         .single();
 
-      if (newStaff) {
-        const days = [1, 2, 3, 4, 5];
-        await supabase.from("working_hours").insert(
-          days.map((d) => ({
-            staff_id: newStaff.id,
-            day_of_week: d,
-            start_time: "09:00",
-            end_time: "17:00",
-            is_working: true,
-          })),
+      if (staffError || !newStaff) {
+        console.error("Onboarding: failed to create staff:", staffError);
+        setError(
+          `Your business was saved, but the staff member could not be added: ${staffError?.message || "unknown error"}`,
         );
+        setSaving(false);
+        return;
       }
+      done.current.staff = true;
+      done.current.staffId = newStaff.id;
+    }
+
+    // Default Mon–Fri hours for the new staff (separate step so a retry
+    // after a failure re-attempts the hours without recreating the staff).
+    if (done.current.staffId && !done.current.hours) {
+      const staffId = done.current.staffId;
+      const days = [1, 2, 3, 4, 5];
+      const { error: hoursError } = await supabase.from("working_hours").insert(
+        days.map((d) => ({
+          staff_id: staffId,
+          day_of_week: d,
+          start_time: "09:00",
+          end_time: "17:00",
+          is_working: true,
+        })),
+      );
+      if (hoursError) {
+        console.error("Onboarding: failed to create working hours:", hoursError);
+        setError(
+          "The staff member was added, but default working hours could not be saved. Try again, or set the hours later on the Staff page.",
+        );
+        setSaving(false);
+        return;
+      }
+      done.current.hours = true;
     }
 
     await refreshBusiness();
@@ -223,13 +289,17 @@ export function OnboardingWizard() {
                     value={bizData.timezone}
                     onChange={(e) => setBizData({ ...bizData, timezone: e.target.value })}
                   >
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">Eastern</option>
-                    <option value="America/Chicago">Central</option>
-                    <option value="America/Los_Angeles">Pacific</option>
-                    <option value="Europe/London">London</option>
-                    <option value="Asia/Karachi">Karachi</option>
-                    <option value="Asia/Dubai">Dubai</option>
+                    {(() => {
+                      try {
+                        return Intl.supportedValuesOf("timeZone").map((tz) => (
+                          <option key={tz} value={tz}>
+                            {tz}
+                          </option>
+                        ));
+                      } catch {
+                        return <option value="Asia/Karachi">Asia/Karachi</option>;
+                      }
+                    })()}
                   </select>
                 </div>
               </div>
@@ -325,6 +395,12 @@ export function OnboardingWizard() {
               <p className="text-sm text-gray-500 mt-1">
                 Your business is ready to accept bookings.
               </p>
+            </div>
+          )}
+
+          {step === 3 && error && (
+            <div className="rounded-lg border border-error-300 bg-error-50 dark:bg-error-900/20 dark:border-error-800 px-4 py-3 text-sm text-error-700 dark:text-error-300 mb-4">
+              {error}
             </div>
           )}
 
