@@ -22,12 +22,12 @@ npm run dev          # http://localhost:8080
 
 Commands:
 
-| Command             | What it does                      |
-| ------------------- | --------------------------------- |
-| `npm run dev`       | Start the dev server on port 8080 |
-| `npm run build`     | Production build                  |
-| `npx tsc --noEmit`  | TypeScript typecheck              |
-| `npm run lint`      | Lint                              |
+| Command            | What it does                      |
+| ------------------ | --------------------------------- |
+| `npm run dev`      | Start the dev server on port 8080 |
+| `npm run build`    | Production build                  |
+| `npx tsc --noEmit` | TypeScript typecheck              |
+| `npm run lint`     | Lint                              |
 
 ## Database
 
@@ -78,20 +78,20 @@ Never commit real keys. Service-role keys are not used by this codebase.
 
 ## Feature status (honest)
 
-| Area                                                                      | State                                                  |
-| ------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Sign up / sign in / session / protected routes                            | Working, tested                                        |
-| Business onboarding (business, first service, first staff, working hours) | Working, tested                                        |
+| Area                                                                      | State                                                                                                |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Sign up / sign in / session / protected routes                            | Working, tested                                                                                      |
+| Business onboarding (business, first service, first staff, working hours) | Working, tested                                                                                      |
 | Business data isolation (RLS + triggers)                                  | Working — 60-case DB test suite on local PostgreSQL; not yet verified on the remote Supabase project |
-| Booking engine (conflicts, working hours, buffer, holidays, timezones)    | Working — enforced in the database, verified by the test suite |
-| Dashboard, services, staff, customers, bookings, analytics screens        | Working, with loading/error/empty states               |
-| AI business assistant (English + Urdu, real data)                         | Working, tested                                        |
-| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes                  | Working                                                |
-| Public booking page                                                       | Working — secure RPC only, real availability, business-timezone slots |
-| Manual payment tracking (deposits, balances)                              | Recordable from the bookings page; balance/status derived by DB triggers |
-| Online card payments (Stripe/Paddle), refunds, receipts                   | **Not implemented**                                    |
-| Email / SMS / push notifications and reminders                            | **Not delivered** — no provider configured             |
-| Plan limits (Free / Pro / Ultimate)                                       | UI only, not enforced server-side                      |
+| Booking engine (conflicts, working hours, buffer, holidays, timezones)    | Working — enforced in the database, verified by the test suite                                       |
+| Dashboard, services, staff, customers, bookings, analytics screens        | Working, with loading/error/empty states                                                             |
+| AI business assistant (English + Urdu, real data)                         | Working, tested                                                                                      |
+| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes                  | Working                                                                                              |
+| Public booking page                                                       | Working — secure RPC only, real availability, business-timezone slots                                |
+| Manual payment tracking (deposits, balances)                              | Recordable from the bookings page; balance/status derived by DB triggers                             |
+| Online card payments (Stripe/Paddle), refunds, receipts                   | **Not implemented**                                                                                  |
+| Email / SMS / push notifications and reminders                            | **Not delivered** — no provider configured                                                           |
+| Plan limits (Free / Pro / Ultimate)                                       | UI only, not enforced server-side                                                                    |
 
 Anything marked not implemented is not wired to a real provider. Do not treat
 it as production-ready.

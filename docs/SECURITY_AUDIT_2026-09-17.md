@@ -26,16 +26,16 @@ Result: **PASSED 60 / FAILED 0** (re-run at every relevant milestone).
 
 Coverage:
 
-| Section | What was proven |
-| --- | --- |
-| A1–A10 membership | Outsider self-join as owner/staff denied; staff self-promotion and cross-role change denied; owner changes allowed; last-owner demotion denied; admin can invite staff but not owner; cross-tenant read/update denied |
-| B1–B10 anonymous access | Anon can read active business/services/staff/working_hours of completed businesses; **cannot** insert customers or bookings; cannot read other businesses' customers/bookings/payments; cannot call internal functions directly |
+| Section                   | What was proven                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1–A10 membership         | Outsider self-join as owner/staff denied; staff self-promotion and cross-role change denied; owner changes allowed; last-owner demotion denied; admin can invite staff but not owner; cross-tenant read/update denied                                                                                                                                             |
+| B1–B10 anonymous access   | Anon can read active business/services/staff/working_hours of completed businesses; **cannot** insert customers or bookings; cannot read other businesses' customers/bookings/payments; cannot call internal functions directly                                                                                                                                   |
 | C1–C15 public booking RPC | Success path; duplicate/overlap conflict rejected; back-to-back allowed; before-open/after-close rejected; off-day rejected; cross-business service/staff rejected; bad slug/email/name rejected; past dates rejected; **day-of-week and working-hours checks run in the business timezone** (e.g. Mon 00:30 +05:30 = Sun 19:00 UTC allowed for a Mon-only staff) |
-| D1–D8 slots | 15 real slots generated from working hours; booked slots removed; off-day and holiday return empty; holiday booking rejected |
-| E1–E3 buffer | Back-to-back denied when buffer = 30 min; gap ≥ buffer allowed |
-| F1–F4 member writes | Overlap trigger rejects for **all** writers (not just anon); cross-business service denied; reschedule without self-conflict allowed; cancelled slot re-bookable |
-| G1–G7 payments | Partial → `partial`; overpayment rejected; exact remaining → `paid`; negative rejected; cross-business rejected |
-| H1 concurrency | Two concurrent same-slot bookings → **exactly one winner** (advisory lock) |
+| D1–D8 slots               | 15 real slots generated from working hours; booked slots removed; off-day and holiday return empty; holiday booking rejected                                                                                                                                                                                                                                      |
+| E1–E3 buffer              | Back-to-back denied when buffer = 30 min; gap ≥ buffer allowed                                                                                                                                                                                                                                                                                                    |
+| F1–F4 member writes       | Overlap trigger rejects for **all** writers (not just anon); cross-business service denied; reschedule without self-conflict allowed; cancelled slot re-bookable                                                                                                                                                                                                  |
+| G1–G7 payments            | Partial → `partial`; overpayment rejected; exact remaining → `paid`; negative rejected; cross-business rejected                                                                                                                                                                                                                                                   |
+| H1 concurrency            | Two concurrent same-slot bookings → **exactly one winner** (advisory lock)                                                                                                                                                                                                                                                                                        |
 
 **NOT VERIFIED:** the remote Supabase project. The two new migrations must be
 applied there (`supabase db push` or SQL editor) and this suite re-run before
@@ -52,11 +52,13 @@ migration issue.
 ## 2. Milestone log
 
 ### M1 — Baseline recovery (syntax + typecheck)
+
 - `fa50d25` AppLayout syntax restored; `f640228` Dashboard null-narrowing
   typecheck fix; `ee57989` full prettier pass.
 - Evidence: tsc/lint/build all PASS (baseline `e4fb161` failed all three).
 
 ### M3 — P0 security (Phases 5, 6, 7 DB layer)
+
 - `7cdc59c` — 2 new migrations + `types.ts`:
   - `20260917_001_secure_membership_and_public_data.sql`
     - Membership INSERT: no more self-join into any business as any role
@@ -97,6 +99,7 @@ migration issue.
 - Evidence: 60/60 suite PASS (sections A–H above).
 
 ### M4 — Public booking frontend (Phase 6 UI)
+
 - `84010f3` — `PublicBooking.tsx` rewired to the secure RPCs:
   - Time availability from `get_available_slots` (was a hardcoded
     09:00–16:30 list) with loading/empty/error states.
@@ -112,6 +115,7 @@ migration issue.
     round-trips — all pass.
 
 ### M5 — Bookings page (Phase 7 UI)
+
 - `e3040b9` — every Supabase call now checks its error:
   - Load failures show an error state with retry (no silent empty list,
     no infinite spinner without a business).
@@ -125,6 +129,7 @@ migration issue.
     browser timezone.
 
 ### M6 — Data truthfulness (Phases 17/18/12)
+
 - `c00c79b`:
   - Dashboard: `totalBookings` and revenue previously came from a
     `.limit(10)` query with an undefined count (KPI always 0; revenue from
@@ -144,6 +149,7 @@ migration issue.
   - `shiftDate()` added to utils (pure calendar arithmetic).
 
 ### M7 — CRUD error handling + booking settings UI (Phases 9/10/11/14/16)
+
 - `95ca6c6` — Customers / Staff / Services / Settings / Notifications:
   - Every page load shows an error state with retry.
   - Every create/update/delete checks its response and shows the real
@@ -165,6 +171,7 @@ migration issue.
     `Holiday` interface.
 
 ### M8 — Plans (Phase 23 + Golden Rule 12)
+
 - `63d1ef7` —
   - Dynamic Tailwind class names (`bg-${color}-50`, `text-${color}-600`)
     replaced with a static class map — the old names are not compiled by
@@ -176,6 +183,7 @@ migration issue.
   - Prices labeled USD explicitly.
 
 ### M9 — Onboarding, i18n mount, env configuration (Phases 3/4/19/22)
+
 - `bd9e601` —
   - `OnboardingWizard.handleFinish` ignored most failures: a failed
     business update still created (duplicate) service/staff and navigated
@@ -193,6 +201,7 @@ migration issue.
     reserved for future background jobs, must never reach the browser).
 
 ### M10 — Payments UI (Phase 15)
+
 - `23d4ca7` — Record Payment action on unpaid/partial bookings:
   - Shows total, paid (sum of non-refunded payments), remaining (prefilled).
   - Client-side overpay guard; the DB trigger remains the authority and its
@@ -204,6 +213,7 @@ migration issue.
     (G1–G7); full suite re-run: 60/60.
 
 ### M11 — Accessibility (Phase 20) + preview (Phases 25–30)
+
 - `82ed24f` — `aria-label` (and `aria-expanded` on toggles) on all
   icon-only buttons: sidebar close, sign out, mobile menu, language, theme
   toggle, and per-row edit/delete/payment/status actions on
@@ -221,15 +231,15 @@ migration issue.
 
 ## 3. Final gate results (at `2f0633d`)
 
-| Gate | Result |
-| --- | --- |
-| `npx tsc --noEmit` | PASS (0 errors) |
-| `npm run lint` | PASS (0 errors; 11 pre-existing `react-refresh/only-export-components` warnings) |
-| `npm run build` | PASS |
-| DB security suite (PostgreSQL 18.4) | **60/60 PASS** |
-| Timezone helpers (unit) | all cases pass (incl. DST, cross-midnight, invalid zone) |
-| Calendar grid math (unit) | all 12 months of 2026 pass |
-| Dev preview | HTTP 200 on the preview host; renders the "Supabase is not configured" setup screen (expected — no credentials in this sandbox) |
+| Gate                                | Result                                                                                                                          |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `npx tsc --noEmit`                  | PASS (0 errors)                                                                                                                 |
+| `npm run lint`                      | PASS (0 errors; 11 pre-existing `react-refresh/only-export-components` warnings)                                                |
+| `npm run build`                     | PASS                                                                                                                            |
+| DB security suite (PostgreSQL 18.4) | **60/60 PASS**                                                                                                                  |
+| Timezone helpers (unit)             | all cases pass (incl. DST, cross-midnight, invalid zone)                                                                        |
+| Calendar grid math (unit)           | all 12 months of 2026 pass                                                                                                      |
+| Dev preview                         | HTTP 200 on the preview host; renders the "Supabase is not configured" setup screen (expected — no credentials in this sandbox) |
 
 ## 4. What is NOT verified
 
