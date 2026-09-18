@@ -79,4 +79,10 @@ function SkeletonTable({ rows = 5, columns = 3 }: SkeletonTableProps) {
   );
 }
 
-export { Skeleton, SkeletonCard, SkeletonTable };
+export { Skeleton, SkeletonCard, SkeletonTable };import { cn } from "@/lib/utils";
+
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("animate-pulse rounded-md bg-primary/10", className)} {...props} />;
+}
+
+export { Skeleton };
