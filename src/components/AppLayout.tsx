@@ -19,7 +19,9 @@ import {
   Globe,
   Calendar,
   AlertCircle,
+  CalendarPlus,
 } from "lucide-react";
+import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useI18n } from "@/context/I18nContext";
@@ -33,29 +35,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [langOpen, setLangOpen] = useState(false);
   const navigate = useNavigate();
 
-  const navItems = [
-    { to: "/", icon: LayoutDashboard, label: t("dashboard") },
-    { to: "/bookings", icon: CalendarDays, label: t("bookings") },
-    { to: "/calendar", icon: Calendar, label: t("calendar") },
-    { to: "/customers", icon: Users, label: t("customers") },
-    { to: "/staff", icon: UserCog, label: t("staff") },
-    { to: "/services", icon: Sparkles, label: t("services") },
-    { to: "/analytics", icon: BarChart3, label: t("analytics") },
-    { to: "/notifications", icon: Bell, label: t("notifications") },
-    { to: "/ai-assistant", icon: Bot, label: t("ai_assistant") },
-    { to: "/plans", icon: CreditCard, label: t("plans") },
-    { to: "/settings", icon: Settings, label: t("settings") },
-  ];
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate("/auth", { replace: true });
-    } catch (err) {
-      console.error("Sign out error:", err);
-    }
-  };
-
   if (!business) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -66,6 +45,64 @@ export function AppLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
+
+  // Grouped information architecture (Overview / Operations / Insights /
+  // Growth / System) so the sidebar reads as a business tool, not a flat
+  // link list. Only routes that actually exist are listed.
+  const navGroups: {
+    label: string;
+    items: { to: string; icon: typeof Calendar; label: string; external?: boolean }[];
+  }[] = [
+    {
+      label: "Overview",
+      items: [{ to: "/", icon: LayoutDashboard, label: t("dashboard") }],
+    },
+    {
+      label: "Operations",
+      items: [
+        { to: "/calendar", icon: Calendar, label: t("calendar") },
+        { to: "/bookings", icon: CalendarDays, label: t("bookings") },
+        { to: "/customers", icon: Users, label: t("customers") },
+        { to: "/services", icon: Sparkles, label: t("services") },
+        { to: "/staff", icon: UserCog, label: t("staff") },
+      ],
+    },
+    {
+      label: "Insights",
+      items: [
+        { to: "/analytics", icon: BarChart3, label: t("analytics") },
+        { to: "/ai-assistant", icon: Bot, label: t("ai_assistant") },
+      ],
+    },
+    {
+      label: "Growth",
+      items: [
+        {
+          to: `/book/${business.slug}`,
+          icon: CalendarPlus,
+          label: t("public_booking"),
+          external: true,
+        },
+        { to: "/notifications", icon: Bell, label: t("notifications") },
+      ],
+    },
+    {
+      label: "System",
+      items: [
+        { to: "/plans", icon: CreditCard, label: t("plans") },
+        { to: "/settings", icon: Settings, label: t("settings") },
+      ],
+    },
+  ];
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/auth", { replace: true });
+    } catch (err) {
+      console.error("Sign out error:", err);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -91,24 +128,46 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary-100 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 font-medium"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                }`
-              }
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.icon size={18} />
-              {item.label}
-            </NavLink>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4" aria-label="Main navigation">
+          {navGroups.map((group) => (
+            <div key={group.label}>
+              <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) =>
+                  item.external ? (
+                    <a
+                      key={item.to}
+                      href={item.to}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                    >
+                      <item.icon size={18} />
+                      {item.label}
+                    </a>
+                  ) : (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === "/"}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+                          isActive
+                            ? "bg-primary-100 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300"
+                            : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                        }`
+                      }
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon size={18} />
+                      {item.label}
+                    </NavLink>
+                  )
+                )}
+              </div>
+            </div>
           ))}
         </nav>
 
@@ -167,7 +226,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Notifications */}
+            <Link
+              to="/notifications"
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded"
+              title={t("notifications")}
+              aria-label={t("notifications")}
+            >
+              <Bell size={18} />
+            </Link>
+
             {/* Language */}
             <div className="relative">
               <button
