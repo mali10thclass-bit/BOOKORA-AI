@@ -164,7 +164,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <item.icon size={18} />
                       {item.label}
                     </NavLink>
-                  )
+                  ),
                 )}
               </div>
             </div>
