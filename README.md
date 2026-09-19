@@ -22,12 +22,12 @@ npm run dev          # http://localhost:8080
 
 Commands:
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Start the dev server on port 8080 |
-| `npm run build` | Production build |
-| `npx tsgo --noEmit` | TypeScript typecheck |
-| `npm run lint` | Lint |
+| Command            | What it does                      |
+| ------------------ | --------------------------------- |
+| `npm run dev`      | Start the dev server on port 8080 |
+| `npm run build`    | Production build                  |
+| `npx tsc --noEmit` | TypeScript typecheck              |
+| `npm run lint`     | Lint                              |
 
 ## Database
 
@@ -40,11 +40,33 @@ supabase db push
 ```
 
 Tables: `businesses`, `business_members`, `locations`, `services`, `staff`,
-`working_hours`, `customers`, `bookings`, `payments`, `notifications`.
+`working_hours`, `customers`, `bookings`, `payments`, `notifications`,
+`holidays`.
 
 Every table has row-level security enabled and is scoped by business
-membership, so one business can never read or write another's data. This was
-verified end to end with two separate accounts and businesses.
+membership, so one business can never read or write another's data.
+
+Security is enforced at the database level (RLS policies, row-level trigger
+guards, and the `public_create_booking` / `get_available_slots` RPCs). The
+migrations `20260917_001_secure_membership_and_public_data` and
+`20260917_002_booking_engine_and_settings` add:
+
+- membership protection (no self-join into other businesses, no
+  self-promotion to owner/admin, last-owner protection),
+- removal of all anonymous INSERT paths (public booking goes through the
+  validating RPC only),
+- server-side booking validation: business-timezone working hours,
+  per-staff conflict detection with an advisory lock (no double-booking
+  race), buffer, holidays, and input validation,
+- booking/payment integrity triggers for all writers (overlapping
+  appointments rejected; payment status derived from the payments table;
+  overpayment and cross-business payments rejected).
+
+This was verified against a local PostgreSQL 18.4 instance with a 60-case
+test suite (role escalation, tenant isolation, anonymous access, conflict
+and concurrency, buffers, holidays, timezones, payments). It has **not**
+been verified against a remote Supabase project — apply the migrations
+there and re-run the checks before trusting it in production.
 
 ## Environment variables
 
@@ -56,19 +78,20 @@ Never commit real keys. Service-role keys are not used by this codebase.
 
 ## Feature status (honest)
 
-| Area | State |
-| --- | --- |
-| Sign up / sign in / session / protected routes | Working, tested |
-| Business onboarding (business, first service, first staff, working hours) | Working, tested |
-| Business data isolation (RLS) | Working, tested with two businesses |
-| Dashboard, services, staff, customers, bookings, analytics screens | Working |
-| AI business assistant (English + Urdu, real data) | Working, tested |
-| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes | Working |
-| Public booking page | Present, server-side validation hardening not complete |
-| Manual payment tracking (deposits, balances) | Database-level only |
-| Online card payments (Stripe/Paddle), refunds, receipts | **Not implemented** |
-| Email / SMS / push notifications and reminders | **Not delivered** — no provider configured |
-| Plan limits (Free / Pro / Ultimate) | UI only, not enforced server-side |
+| Area                                                                      | State                                                                                                |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Sign up / sign in / session / protected routes                            | Working, tested                                                                                      |
+| Business onboarding (business, first service, first staff, working hours) | Working, tested                                                                                      |
+| Business data isolation (RLS + triggers)                                  | Working — 60-case DB test suite on local PostgreSQL; not yet verified on the remote Supabase project |
+| Booking engine (conflicts, working hours, buffer, holidays, timezones)    | Working — enforced in the database, verified by the test suite                                       |
+| Dashboard, services, staff, customers, bookings, analytics screens        | Working, with loading/error/empty states                                                             |
+| AI business assistant (English + Urdu, real data)                         | Working, tested                                                                                      |
+| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes                  | Working                                                                                              |
+| Public booking page                                                       | Working — secure RPC only, real availability, business-timezone slots                                |
+| Manual payment tracking (deposits, balances)                              | Recordable from the bookings page; balance/status derived by DB triggers                             |
+| Online card payments (Stripe/Paddle), refunds, receipts                   | **Not implemented**                                                                                  |
+| Email / SMS / push notifications and reminders                            | **Not delivered** — no provider configured                                                           |
+| Plan limits (Free / Pro / Ultimate)                                       | UI only, not enforced server-side                                                                    |
 
 Anything marked not implemented is not wired to a real provider. Do not treat
 it as production-ready.

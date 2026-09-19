@@ -56,9 +56,14 @@ npm run build
 
 ## 7. Known gaps
 
-- Online payments are not connected. Payment fields exist in the database and
-  are updated manually from the UI.
+- Online payments are not connected. Payments are recorded manually from the
+  bookings page; balances and payment status are derived by database triggers.
 - Notifications are stored as records; nothing is actually emailed or texted.
 - Plan limits are shown but not enforced on the server.
-- The public booking page does not yet perform all server-side validation
-  (timezone, buffer, conflict checks run client-side only).
+- The public booking page is now fully validated server-side (business
+  timezone, working hours, buffer, conflicts, holidays) through the
+  `public_create_booking` RPC, and availability comes from
+  `get_available_slots`. This has been verified on a local PostgreSQL 18.4
+  instance with a 60-case test suite, but **not yet on the remote Supabase
+  project** — apply the `20260917_001`/`20260917_002` migrations there and
+  re-verify before production.

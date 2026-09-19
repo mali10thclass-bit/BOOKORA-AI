@@ -6,9 +6,15 @@ export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
       { title: "Set up your business | BOOKORA AI" },
-      { name: "description", content: "Add your business details, services and staff to start taking bookings." },
+      {
+        name: "description",
+        content: "Add your business details, services and staff to start taking bookings.",
+      },
       { property: "og:title", content: "Set up your business | BOOKORA AI" },
-      { property: "og:description", content: "Add your business details, services and staff to start taking bookings." },
+      {
+        property: "og:description",
+        content: "Add your business details, services and staff to start taking bookings.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

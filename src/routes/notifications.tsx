@@ -7,9 +7,15 @@ export const Route = createFileRoute("/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications | BOOKORA AI" },
-      { name: "description", content: "Notification templates and a log of every message recorded." },
+      {
+        name: "description",
+        content: "Notification templates and a log of every message recorded.",
+      },
       { property: "og:title", content: "Notifications | BOOKORA AI" },
-      { property: "og:description", content: "Notification templates and a log of every message recorded." },
+      {
+        property: "og:description",
+        content: "Notification templates and a log of every message recorded.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

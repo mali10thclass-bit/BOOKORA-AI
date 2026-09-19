@@ -1,9 +1,9 @@
-import { Bot } from 'lucide-react'
-import { useI18n } from '@/context/I18nContext'
-import { BusinessAssistant } from '@/components/BusinessAssistant'
+import { Bot } from "lucide-react";
+import { useI18n } from "@/context/I18nContext";
+import { BusinessAssistant } from "@/components/BusinessAssistant";
 
 export function AIAssistant() {
-  const { t } = useI18n()
+  const { t } = useI18n();
 
   return (
     <div className="space-y-4 max-w-3xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
@@ -12,7 +12,7 @@ export function AIAssistant() {
           <Bot size={20} />
         </div>
         <div>
-          <h1 className="text-xl font-bold">{t('ai_assistant')}</h1>
+          <h1 className="text-xl font-bold">{t("ai_assistant")}</h1>
           <p className="text-xs text-gray-500">Powered by your real business data</p>
         </div>
       </div>
@@ -23,5 +23,5 @@ export function AIAssistant() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,38 +1,38 @@
-import { useState } from 'react'
-import { useNavigate } from '@/lib/router-compat'
-import { useAuth } from '@/context/AuthContext'
-import { Calendar, Loader2 } from 'lucide-react'
+import { useState } from "react";
+import { useNavigate } from "@/lib/router-compat";
+import { useAuth } from "@/context/AuthContext";
+import { Calendar, Loader2 } from "lucide-react";
 
 export function AuthPage() {
-  const { signIn, signUp } = useAuth()
-  const navigate = useNavigate()
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-    if (mode === 'signin') {
-      const { error } = await signIn(email, password)
-      if (error) setError(error)
-      else navigate('/')
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    if (mode === "signin") {
+      const { error } = await signIn(email, password);
+      if (error) setError(error);
+      else navigate("/");
     } else {
       if (password.length < 6) {
-        setError('Password must be at least 6 characters')
-        setLoading(false)
-        return
+        setError("Password must be at least 6 characters");
+        setLoading(false);
+        return;
       }
-      const { error } = await signUp(email, password, fullName)
-      if (error) setError(error)
-      else navigate('/')
+      const { error } = await signUp(email, password, fullName);
+      if (error) setError(error);
+      else navigate("/");
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
@@ -46,16 +46,16 @@ export function AuthPage() {
 
         <div className="card p-6 sm:p-8">
           <h2 className="text-xl font-semibold mb-1">
-            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+            {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            {mode === 'signin'
-              ? 'Sign in to manage your bookings'
-              : 'Start your appointment booking journey'}
+            {mode === "signin"
+              ? "Sign in to manage your bookings"
+              : "Start your appointment booking journey"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <div>
                 <label className="label">Full Name</label>
                 <input
@@ -99,17 +99,20 @@ export function AuthPage() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full">
               {loading && <Loader2 size={16} className="animate-spin" />}
-              {mode === 'signin' ? 'Sign In' : 'Sign Up'}
+              {mode === "signin" ? "Sign In" : "Sign Up"}
             </button>
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-500">
-            {mode === 'signin' ? "Don't have an account? " : 'Already have an account? '}
+            {mode === "signin" ? "Don't have an account? " : "Already have an account? "}
             <button
-              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(null) }}
+              onClick={() => {
+                setMode(mode === "signin" ? "signup" : "signin");
+                setError(null);
+              }}
               className="text-primary-600 font-medium hover:underline"
             >
-              {mode === 'signin' ? 'Sign Up' : 'Sign In'}
+              {mode === "signin" ? "Sign Up" : "Sign In"}
             </button>
           </div>
         </div>
@@ -119,5 +122,5 @@ export function AuthPage() {
         </p>
       </div>
     </div>
-  )
+  );
 }

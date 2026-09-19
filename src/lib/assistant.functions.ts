@@ -39,9 +39,11 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
     }
 
     const businessId = member.business_id;
-    const business = (member as unknown as {
-      businesses: { name: string; currency: string | null; timezone: string | null } | null;
-    }).businesses;
+    const business = (
+      member as unknown as {
+        businesses: { name: string; currency: string | null; timezone: string | null } | null;
+      }
+    ).businesses;
 
     const [bookingsRes, servicesRes, staffRes, customersRes] = await Promise.all([
       supabase
@@ -57,7 +59,11 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         .select("name, price, duration_minutes, is_active, category")
         .eq("business_id", businessId)
         .limit(200),
-      supabase.from("staff").select("name, role, is_active").eq("business_id", businessId).limit(200),
+      supabase
+        .from("staff")
+        .select("name, role, is_active")
+        .eq("business_id", businessId)
+        .limit(200),
       supabase.from("customers").select("id").eq("business_id", businessId).limit(2000),
     ]);
 
@@ -124,7 +130,12 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       const result = streamText({
         model: lovable.responses("openai/gpt-6-astra"),
         providerOptions: {
-          openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false },
+          openai: {
+            forceReasoning: true,
+            reasoningEffort: "low",
+            reasoningSummary: "auto",
+            store: false,
+          },
         },
         system: [
           "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
@@ -145,13 +156,20 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       return { answer: answer || "I could not produce an answer for that question.", error: null };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const status = (error as { statusCode?: number; status?: number }).statusCode ??
+      const status =
+        (error as { statusCode?: number; status?: number }).statusCode ??
         (error as { status?: number }).status;
       if (status === 402) {
-        return { answer: null, error: "The workspace is out of AI credits. Add credits to keep using the assistant." };
+        return {
+          answer: null,
+          error: "The workspace is out of AI credits. Add credits to keep using the assistant.",
+        };
       }
       if (status === 429) {
-        return { answer: null, error: "The assistant is rate limited right now. Try again in a moment." };
+        return {
+          answer: null,
+          error: "The assistant is rate limited right now. Try again in a moment.",
+        };
       }
       console.error("[assistant]", message);
       return { answer: null, error: "The assistant could not answer right now." };
