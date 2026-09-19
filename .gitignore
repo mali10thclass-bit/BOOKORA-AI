@@ -1,23 +1,4 @@
-node_modules/
-dist/
-build/
-.cache/
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
-*.secret
-secrets/
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-*.log
-coverage/
-.nyc_output
-tmp/
-temp/# Logs
+# Logs
 logs
 *.log
 npm-debug.log*

@@ -7,9 +7,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard | BOOKORA AI" },
-      { name: "description", content: "Today's appointments, revenue and activity for your booking business." },
+      {
+        name: "description",
+        content: "Today's appointments, revenue and activity for your booking business.",
+      },
       { property: "og:title", content: "Dashboard | BOOKORA AI" },
-      { property: "og:description", content: "Today's appointments, revenue and activity for your booking business." },
+      {
+        property: "og:description",
+        content: "Today's appointments, revenue and activity for your booking business.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

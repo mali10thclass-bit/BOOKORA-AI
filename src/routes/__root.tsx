@@ -37,12 +37,60 @@ function NotFoundComponent() {
   );
 }
 
+function isMissingEnvError(error: Error): boolean {
+  return /Missing Supabase environment variable/i.test(error.message);
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  if (isMissingEnvError(error)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-lg text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Supabase is not configured
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+          <div className="mt-6 rounded-lg border border-input bg-background p-4 text-left text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">To fix this:</p>
+            <ol className="mt-2 list-decimal list-inside space-y-1">
+              <li>
+                Create a <code className="rounded bg-black/10 dark:bg-white/10 px-1">.env</code>{" "}
+                file from{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">.env.example</code>
+              </li>
+              <li>
+                Set{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">VITE_SUPABASE_URL</code>{" "}
+                and{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">
+                  VITE_SUPABASE_PUBLISHABLE_KEY
+                </code>{" "}
+                from your Supabase project settings
+              </li>
+              <li>Restart the dev server and refresh this page</li>
+            </ol>
+          </div>
+          <div className="mt-6">
+            <button
+              onClick={() => {
+                router.invalidate();
+                reset();
+              }}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -130,19 +178,86 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Missing Supabase configuration is a deployment problem, not a runtime
+ * page error: show a dedicated setup screen on first paint instead of
+ * letting every page fail with a generic error.
+ *
+ * The check mirrors the client's own variable resolution
+ * (VITE_* for the browser build, plain names for the server), so it is
+ * consistent between SSR and the client.
+ */
+function SupabaseConfigGate({ children }: { children: ReactNode }) {
+  const missing = (() => {
+    const m: string[] = [];
+    const env = import.meta.env;
+    if (!env.VITE_SUPABASE_URL && !process.env.SUPABASE_URL) m.push("VITE_SUPABASE_URL");
+    if (!env.VITE_SUPABASE_PUBLISHABLE_KEY && !process.env.SUPABASE_PUBLISHABLE_KEY)
+      m.push("VITE_SUPABASE_PUBLISHABLE_KEY");
+    return m;
+  })();
+
+  if (missing.length > 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-lg text-center">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Supabase is not configured
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Missing environment variable(s): {missing.join(", ")}
+          </p>
+          <div className="mt-6 rounded-lg border border-input bg-background p-4 text-left text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">To fix this:</p>
+            <ol className="mt-2 list-decimal list-inside space-y-1">
+              <li>
+                Create a <code className="rounded bg-black/10 dark:bg-white/10 px-1">.env</code>{" "}
+                file from{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">.env.example</code>
+              </li>
+              <li>
+                Set{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">VITE_SUPABASE_URL</code>{" "}
+                and{" "}
+                <code className="rounded bg-black/10 dark:bg-white/10 px-1">
+                  VITE_SUPABASE_PUBLISHABLE_KEY
+                </code>{" "}
+                from your Supabase project settings
+              </li>
+              <li>Restart the dev server and refresh this page</li>
+            </ol>
+          </div>
+          <div className="mt-6">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Reload
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <I18nProvider>
-          <AuthProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Outlet />
-          </AuthProvider>
-        </I18nProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <SupabaseConfigGate>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <I18nProvider>
+            <AuthProvider>
+              {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+              <Outlet />
+            </AuthProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </SupabaseConfigGate>
   );
 }

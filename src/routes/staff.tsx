@@ -9,7 +9,10 @@ export const Route = createFileRoute("/staff")({
       { title: "Staff | BOOKORA AI" },
       { name: "description", content: "Manage team members, roles and weekly working hours." },
       { property: "og:title", content: "Staff | BOOKORA AI" },
-      { property: "og:description", content: "Manage team members, roles and weekly working hours." },
+      {
+        property: "og:description",
+        content: "Manage team members, roles and weekly working hours.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
