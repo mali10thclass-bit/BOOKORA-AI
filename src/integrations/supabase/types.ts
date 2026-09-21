@@ -579,6 +579,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_business_for_current_user: {
+        Args: {
+          p_address: string | null;
+          p_currency: string;
+          p_description: string | null;
+          p_email: string | null;
+          p_name: string;
+          p_phone: string | null;
+          p_timezone: string;
+        };
+        Returns: Json;
+      };
       create_public_booking: {
         Args: {
           p_business_slug: string;

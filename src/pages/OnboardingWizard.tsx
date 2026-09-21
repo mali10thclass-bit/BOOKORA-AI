@@ -2,7 +2,6 @@ import { useState, useRef } from "react";
 import { useNavigate } from "@/lib/router-compat";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
-import { slugify } from "@/lib/utils";
 import { Check, ChevronRight, Building2, Sparkles, UserCog, Calendar } from "lucide-react";
 
 export function OnboardingWizard() {
@@ -72,41 +71,36 @@ export function OnboardingWizard() {
         return;
       }
     } else {
-      // First run: create the business, then link the signed-in user as its owner.
-      const slug = `${slugify(bizData.name || "business")}-${Math.random().toString(36).slice(2, 7)}`;
-      const { data: created, error: createError } = await supabase
-        .from("businesses")
-        .insert({ ...payload, slug })
-        .select()
-        .single();
+      // First run: atomically create the business and owner membership on the
+      // server. The browser never assigns an owner role directly.
+      const { data: created, error: createError } = await supabase.rpc(
+        "create_business_for_current_user",
+        {
+          p_name: payload.name,
+          p_description: payload.description,
+          p_phone: payload.phone,
+          p_email: payload.email,
+          p_address: payload.address,
+          p_currency: payload.currency,
+          p_timezone: payload.timezone,
+        },
+      );
 
       if (createError || !created) {
-        console.error("Onboarding: failed to create business:", createError);
+        console.error("Onboarding: failed to bootstrap business:", createError);
         setError(createError?.message || "Could not create your business. Please try again.");
         setSaving(false);
         return;
       }
-      businessId = created.id;
-      done.current.businessId = businessId;
 
-      // Linking the owner is mandatory: without it the user would not be
-      // able to see the business on the next load.
-      const { error: memberError } = await supabase.from("business_members").insert({
-        business_id: businessId,
-        user_id: user.id,
-        email: user.email ?? bizData.email ?? "",
-        full_name: (user.user_metadata as { full_name?: string } | null)?.full_name ?? null,
-        role: "owner",
-        invite_status: "accepted",
-      });
-      if (memberError) {
-        console.error("Onboarding: failed to link owner:", memberError);
-        setError(
-          `Your business was created, but we could not link it to your account (${memberError.message}). Try again, or contact support if this persists.`,
-        );
+      const createdBusiness = created as { id?: string } | null;
+      if (!createdBusiness?.id) {
+        setError("Business bootstrap returned an invalid response. Please try again.");
         setSaving(false);
         return;
       }
+      businessId = createdBusiness.id;
+      done.current.businessId = businessId;
     }
 
     // Create service (optional step, but a failure must not be silent).

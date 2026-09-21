@@ -28,6 +28,7 @@ import {
   Legend,
 } from "recharts";
 import { BusinessAssistant } from "@/components/BusinessAssistant";
+import { PlanGate } from "@/components/PlanGate";
 
 /** Calendar math on business-timezone date strings (YYYY-MM-DD). */
 function shiftBizDate(bizDate: string, days: number): string {

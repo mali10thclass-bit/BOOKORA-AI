@@ -20,17 +20,12 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => AskInput.parse(input))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) {
-      return { answer: null, error: "AI is not configured for this project yet." };
-    }
-
     const supabase = context.supabase;
 
     // Resolve the caller's own business only — never accept one from the browser.
     const { data: member } = await supabase
       .from("business_members")
-      .select("business_id, role, businesses(name, currency, timezone)")
+      .select("business_id, role, businesses(name, currency, timezone, plan)")
       .eq("user_id", context.userId)
       .maybeSingle();
 
@@ -38,12 +33,30 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       return { answer: null, error: "No business found for your account." };
     }
 
-    const businessId = member.business_id;
     const business = (
       member as unknown as {
-        businesses: { name: string; currency: string | null; timezone: string | null } | null;
+        businesses: {
+          name: string;
+          currency: string | null;
+          timezone: string | null;
+          plan: string | null;
+        } | null;
       }
     ).businesses;
+
+    if (!business || !["pro", "ultimate"].includes(business.plan ?? "free")) {
+      return {
+        answer: null,
+        error: "AI Assistant is available on Pro and Ultimate plans. Upgrade through billing to continue.",
+      };
+    }
+
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) {
+      return { answer: null, error: "AI is not configured for this project yet." };
+    }
+
+    const businessId = member.business_id;
 
     const [bookingsRes, servicesRes, staffRes, customersRes] = await Promise.all([
       supabase
@@ -94,9 +107,9 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
 
     const snapshot = {
       business: {
-        name: business?.name ?? "",
-        currency: business?.currency ?? "USD",
-        timezone: business?.timezone ?? "UTC",
+        name: business.name,
+        currency: business.currency ?? "USD",
+        timezone: business.timezone ?? "UTC",
       },
       today: new Date().toISOString(),
       totals: {

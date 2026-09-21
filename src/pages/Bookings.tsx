@@ -36,6 +36,23 @@ export function Bookings() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [paying, setPaying] = useState<Booking | null>(null);
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "upcoming">("all");
+
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
+      !search ||
+      booking.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      booking.service?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      booking.staff?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+    const today = isoToZonedParts(new Date().toISOString(), business?.timezone || "UTC").date;
+    const bookingDate = isoToZonedParts(booking.start_time, business?.timezone || "UTC").date;
+    const matchesDate =
+      dateFilter === "all" ||
+      (dateFilter === "today" && bookingDate === today) ||
+      (dateFilter === "upcoming" && new Date(booking.start_time).getTime() >= Date.now());
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   const loadData = useCallback(async () => {
     if (!business) return;
@@ -69,22 +86,14 @@ export function Bookings() {
     loadData();
   }, [loadData]);
 
-  const filtered = bookings.filter((b) => {
-    const matchSearch =
-      !search ||
-      b.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      b.service?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      b.staff?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || b.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+
 
   const handleExport = () => {
     // Export in the business timezone so rows match what the business sees.
     const tz = business?.timezone || "UTC";
     downloadCSV(
       "bookings.csv",
-      filtered.map((b) => {
+      filteredBookings.map((b) => {
         const parts = isoToZonedParts(b.start_time, tz);
         return {
           customer: b.customer?.name || "",
@@ -195,6 +204,7 @@ export function Bookings() {
           className="input w-auto"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
+          aria-label="Filter by booking status"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -203,11 +213,21 @@ export function Bookings() {
           <option value="cancelled">Cancelled</option>
           <option value="no_show">No Show</option>
         </select>
+        <select
+          className="input w-auto"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value as "all" | "today" | "upcoming")}
+          aria-label="Filter by booking date"
+        >
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="upcoming">Upcoming</option>
+        </select>
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
-        {filtered.length === 0 ? (
+      <div className="card overflow-hidden">\n        <div className="border-b border-gray-200 px-4 py-2 text-xs text-gray-500 dark:border-gray-800">Showing {filteredBookings.length} of {bookings.length} bookings</div>
+        {filteredBookings.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
             title={t("no_bookings")}
@@ -236,7 +256,7 @@ export function Bookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filtered.map((b) => (
+                {filteredBookings.map((b) => (
                   <tr key={b.id} className="table-row-hover">
                     <td className="px-4 py-3 font-medium">{b.customer?.name || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
