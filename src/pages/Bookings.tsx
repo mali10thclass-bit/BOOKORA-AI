@@ -204,6 +204,7 @@ export function Bookings() {
           className="input w-auto"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as BookingStatus | "all")}
+          aria-label="Filter by booking status"
         >
           <option value="all">All Status</option>
           <option value="pending">Pending</option>
@@ -212,10 +213,20 @@ export function Bookings() {
           <option value="cancelled">Cancelled</option>
           <option value="no_show">No Show</option>
         </select>
+        <select
+          className="input w-auto"
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value as "all" | "today" | "upcoming")}
+          aria-label="Filter by booking date"
+        >
+          <option value="all">All Dates</option>
+          <option value="today">Today</option>
+          <option value="upcoming">Upcoming</option>
+        </select>
       </div>
 
       {/* Table */}
-      <div className="card overflow-hidden">
+      <div className="card overflow-hidden">\n        <div className="border-b border-gray-200 px-4 py-2 text-xs text-gray-500 dark:border-gray-800">Showing {filteredBookings.length} of {bookings.length} bookings</div>
         {filtered.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
@@ -245,7 +256,7 @@ export function Bookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {filtered.map((b) => (
+                {filteredBookings.map((b) => (
                   <tr key={b.id} className="table-row-hover">
                     <td className="px-4 py-3 font-medium">{b.customer?.name || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
