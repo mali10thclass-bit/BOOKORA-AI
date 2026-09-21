@@ -198,10 +198,10 @@ BEFORE INSERT OR UPDATE OF business_id, is_active ON public.locations
 FOR EACH ROW
 EXECUTE FUNCTION public.enforce_location_plan_limit();
 
-REVOKE ALL ON FUNCTION public.enforce_business_plan_change() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.enforce_staff_plan_limit() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.enforce_service_plan_limit() FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.enforce_location_plan_limit() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.enforce_business_plan_change() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enforce_staff_plan_limit() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enforce_service_plan_limit() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.enforce_location_plan_limit() FROM PUBLIC, anon, authenticated;
 
 
 -- Harden SECURITY DEFINER helpers against search_path and role confusion.
@@ -215,3 +215,10 @@ ALTER FUNCTION public.enforce_location_plan_limit() SET search_path = public;
 
 -- PostgreSQL's request.jwt.claim.role is populated by Supabase's JWT layer;
 -- keep the billing exception narrowly scoped to service_role.
+
+
+-- Internal SECURITY DEFINER helpers are not API endpoints.
+REVOKE ALL ON FUNCTION public.public_create_booking(text, uuid, uuid, uuid, timestamptz, timestamptz, text, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.public_create_booking(text, uuid, uuid, uuid, timestamptz, timestamptz, text, text, text) TO service_role;
+REVOKE ALL ON FUNCTION public.update_updated_at() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.update_updated_at() TO service_role;
