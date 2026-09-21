@@ -67,7 +67,7 @@ export function AuthPage() {
         "Account created. Please confirm your email, then sign in to continue to your dashboard.",
       );
     } else {
-      navigate("/", { replace: true });
+      navigate("/onboarding", { replace: true });
     }
 
     setLoading(false);
