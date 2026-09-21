@@ -93,7 +93,13 @@ export function OnboardingWizard() {
         return;
       }
 
-      businessId = created.id;
+      const createdBusiness = created as { id?: string } | null;
+      if (!createdBusiness?.id) {
+        setError("Business bootstrap returned an invalid response. Please try again.");
+        setSaving(false);
+        return;
+      }
+      businessId = createdBusiness.id;
       done.current.businessId = businessId;
     }
 
