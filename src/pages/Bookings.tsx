@@ -36,6 +36,24 @@ export function Bookings() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [paying, setPaying] = useState<Booking | null>(null);
+  const [savingAction, setSavingAction] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "upcoming">("all");
+
+  const filteredBookings = bookings.filter((booking) => {
+    const matchesSearch =
+      !search ||
+      booking.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      booking.service?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      booking.staff?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+    const today = isoToZonedParts(new Date().toISOString(), business?.timezone || "UTC").date;
+    const bookingDate = isoToZonedParts(booking.start_time, business?.timezone || "UTC").date;
+    const matchesDate =
+      dateFilter === "all" ||
+      (dateFilter === "today" && bookingDate === today) ||
+      (dateFilter === "upcoming" && new Date(booking.start_time).getTime() >= Date.now());
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   const loadData = useCallback(async () => {
     if (!business) return;
