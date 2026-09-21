@@ -36,7 +36,6 @@ export function Bookings() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [paying, setPaying] = useState<Booking | null>(null);
-  const [savingAction, setSavingAction] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<"all" | "today" | "upcoming">("all");
 
   const filteredBookings = bookings.filter((booking) => {
@@ -87,22 +86,14 @@ export function Bookings() {
     loadData();
   }, [loadData]);
 
-  const filtered = bookings.filter((b) => {
-    const matchSearch =
-      !search ||
-      b.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      b.service?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      b.staff?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || b.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+
 
   const handleExport = () => {
     // Export in the business timezone so rows match what the business sees.
     const tz = business?.timezone || "UTC";
     downloadCSV(
       "bookings.csv",
-      filtered.map((b) => {
+      filteredBookings.map((b) => {
         const parts = isoToZonedParts(b.start_time, tz);
         return {
           customer: b.customer?.name || "",
