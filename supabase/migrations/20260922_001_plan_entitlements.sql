@@ -202,3 +202,16 @@ REVOKE ALL ON FUNCTION public.enforce_business_plan_change() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enforce_staff_plan_limit() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enforce_service_plan_limit() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enforce_location_plan_limit() FROM PUBLIC;
+
+
+-- Harden SECURITY DEFINER helpers against search_path and role confusion.
+-- Explicitly grant only the roles that need these helpers.
+ALTER FUNCTION public.bookora_plan_limits(text) SET search_path = public;
+ALTER FUNCTION public.bookora_plan_allows_feature(uuid, text) SET search_path = public;
+ALTER FUNCTION public.enforce_business_plan_change() SET search_path = public;
+ALTER FUNCTION public.enforce_staff_plan_limit() SET search_path = public;
+ALTER FUNCTION public.enforce_service_plan_limit() SET search_path = public;
+ALTER FUNCTION public.enforce_location_plan_limit() SET search_path = public;
+
+-- PostgreSQL's request.jwt.claim.role is populated by Supabase's JWT layer;
+-- keep the billing exception narrowly scoped to service_role.
