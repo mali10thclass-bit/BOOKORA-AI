@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION public.create_business_for_current_user(
   p_currency text DEFAULT 'USD',
   p_timezone text DEFAULT 'UTC'
 )
-RETURNS public.businesses
+RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 VOLATILE
@@ -82,7 +82,7 @@ BEGIN
     RAISE EXCEPTION 'Authenticated user record not found';
   END IF;
 
-  RETURN v_business;
+  RETURN to_jsonb(v_business);
 END;
 $$;
 
