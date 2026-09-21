@@ -312,9 +312,9 @@ export function Dashboard() {
             {t("recent_bookings")}
           </h2>
           <div className="flex items-center gap-3">
-            <Link to={`/book/${business?.slug}`} target="_blank" rel="noreferrer" className="hidden items-center gap-1 text-sm text-gray-500 hover:text-gray-900 sm:flex dark:hover:text-white">
+            <a href={`/book/${business?.slug}`} target="_blank" rel="noreferrer" className="hidden items-center gap-1 text-sm text-gray-500 hover:text-gray-900 sm:flex dark:hover:text-white">
               Public page <ExternalLink size={13} />
-            </Link>
+            </a>
             <Link to="/bookings" className="flex items-center gap-1 text-sm text-primary-600 hover:underline">
               {t("view_all")} <ArrowRight size={14} />
             </Link>
