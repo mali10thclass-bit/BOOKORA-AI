@@ -1,12 +1,13 @@
 import { Bot } from "lucide-react";
 import { useI18n } from "@/context/I18nContext";
 import { BusinessAssistant } from "@/components/BusinessAssistant";
+import { PlanGate } from "@/components/PlanGate";
 
 export function AIAssistant() {
   const { t } = useI18n();
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
+    <PlanGate minimumPlan="pro" featureName="AI Assistant">\n      <div className="space-y-4 max-w-3xl mx-auto h-[calc(100vh-8rem)] flex flex-col">
       <div className="flex items-center gap-2">
         <div className="w-9 h-9 rounded-lg bg-primary-600 flex items-center justify-center text-white">
           <Bot size={20} />
