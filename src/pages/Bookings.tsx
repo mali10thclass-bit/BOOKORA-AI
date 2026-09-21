@@ -227,7 +227,7 @@ export function Bookings() {
 
       {/* Table */}
       <div className="card overflow-hidden">\n        <div className="border-b border-gray-200 px-4 py-2 text-xs text-gray-500 dark:border-gray-800">Showing {filteredBookings.length} of {bookings.length} bookings</div>
-        {filtered.length === 0 ? (
+        {filteredBookings.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
             title={t("no_bookings")}
