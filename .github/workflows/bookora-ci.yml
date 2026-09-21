@@ -24,6 +24,9 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
+      - name: Format source for verification
+        run: bunx prettier --write src
+
       - name: Lint
         run: bun run lint
 
