@@ -11,7 +11,11 @@ interface AuthContextType {
   business: Business | null;
   membership: BusinessMember | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string,
+  ) => Promise<{ error: string | null; requiresEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshBusiness: () => Promise<void>;
 }
@@ -28,11 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadBusinessData(userId: string) {
     try {
-      const { data: member, error: memberError } = await supabase
+      const { data: members, error: memberError } = await supabase
         .from("business_members")
         .select("*, businesses(*)")
         .eq("user_id", userId)
-        .maybeSingle();
+        .limit(2);
 
       if (memberError) {
         console.error("Error loading business member:", memberError);
@@ -42,6 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      if (members && members.length > 1) {
+        console.error("Multiple business memberships found for user:", userId);
+        setError("Multiple business memberships found. Please contact your administrator.");
+        setMembership(null);
+        setBusiness(null);
+        return;
+      }
+
+      const member = members?.[0] ?? null;
+
       if (member) {
         setMembership(member as BusinessMember);
         setBusiness(member.businesses as Business);
@@ -49,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setMembership(null);
         setBusiness(null);
+        setError(null);
       }
     } catch (err) {
       console.error("Error in loadBusinessData:", err);
@@ -70,18 +85,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (sessionError) {
           console.error("Session error:", sessionError);
-          setError("Failed to load session");
-          setLoading(false);
+          if (isMounted) {
+            setError("Failed to load session");
+            setLoading(false);
+          }
           return;
         }
 
-        if (isMounted) {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+        if (!isMounted) return;
 
-          if (currentSession?.user) {
-            await loadBusinessData(currentSession.user.id);
-          }
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+
+        if (currentSession?.user) {
+          await loadBusinessData(currentSession.user.id);
+        }
+
+        if (isMounted) {
           setLoading(false);
         }
       } catch (err) {
@@ -97,14 +117,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       if (!isMounted) return;
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      setError(null);
 
       if (currentSession?.user) {
-        await loadBusinessData(currentSession.user.id);
+        // Supabase recommends keeping auth callbacks synchronous. Defer the
+        // database query so auth event processing is not blocked by I/O.
+        setTimeout(() => {
+          if (isMounted) {
+            void loadBusinessData(currentSession.user.id);
+          }
+        }, 0);
       } else {
         setBusiness(null);
         setMembership(null);
@@ -119,7 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
       return { error: error?.message ?? null };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign in failed";
@@ -130,12 +160,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
-        options: { data: { full_name: fullName } },
+        options: {
+          data: { full_name: fullName.trim() },
+        },
       });
+
       if (error) return { error: error.message };
-      return { error: null };
+
+      return {
+        error: null,
+        requiresEmailConfirmation: !data.session,
+      };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign up failed";
       return { error: message };
@@ -144,7 +181,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error: signOutError } = await supabase.auth.signOut();
+
+      if (signOutError) {
+        console.error("Sign out error:", signOutError);
+        setError("Failed to sign out");
+        return;
+      }
+
+      setSession(null);
+      setUser(null);
       setBusiness(null);
       setMembership(null);
       setError(null);
