@@ -151,11 +151,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-      return { error: error?.message ?? null };
+
+      if (error) return { error: error.message };
+
+      // Load the business before AuthPage navigates to "/". This prevents a
+      // race where Protected briefly sees an authenticated user without
+      // business data and redirects to onboarding even though membership
+      // data is already available.
+      if (data.user) {
+        await loadBusinessData(data.user.id);
+      }
+
+      return { error: null };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Sign in failed";
       return { error: message };
