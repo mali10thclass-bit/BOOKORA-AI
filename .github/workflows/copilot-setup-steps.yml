@@ -1,0 +1,25 @@
+- name: ChatGPT Reviewer
+  # You may pin to the exact commit or the version.
+  # uses: feiskyer/ChatGPT-Reviewer@d6f45d2395af832ff3061bee8303a09265800d1e
+  uses: feiskyer/ChatGPT-Reviewer@v0.8
+  with:
+    # Github token used to send out review comments
+    GITHUB_TOKEN: 
+    # API key used to invoke OpenAI
+    OPENAI_API_KEY: 
+    # API based used to access [Azure] OpenAI API
+    OPENAI_API_BASE: # optional
+    # OpenAI model name
+    model: # optional, default is gpt-3.5-turbo
+    # Blocking the pull requests on OpenAI failures
+    blocking: # optional, default is False
+    # Temperature for the model
+    temperature: # optional, default is 0.2
+    # Frequency penalty for the model
+    frequency_penalty: # optional, default is 0
+    # Presence penalty for the model
+    presence_penalty: # optional, default is 0
+    # Send out review requests per file
+    review_per_file: # optional, default is False
+    # Post review comments per file
+    comment_per_file: # optional, default is True
