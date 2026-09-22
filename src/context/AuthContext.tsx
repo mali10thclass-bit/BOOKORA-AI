@@ -17,6 +17,9 @@ interface AuthContextType {
     fullName: string,
   ) => Promise<{ error: string | null; requiresEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
+  recoveryMode: boolean;
   refreshBusiness: () => Promise<void>;
 }
 
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
   const [membership, setMembership] = useState<BusinessMember | null>(null);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   async function loadBusinessData(userId: string) {
     try {
@@ -122,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      setRecoveryMode(_event === "PASSWORD_RECOVERY");
       setError(null);
 
       if (currentSession?.user) {
@@ -179,6 +184,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      const redirectTo = typeof window !== "undefined" ? window.location.origin + "/auth" : undefined;
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), redirectTo ? { redirectTo } : undefined);
+      return { error: error?.message ?? null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Password reset request failed" };
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (!error) setRecoveryMode(false);
+      return { error: error?.message ?? null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Password update failed" };
+    }
+  };
+
   const signOut = async () => {
     try {
       const { error: signOutError } = await supabase.auth.signOut();
@@ -216,6 +241,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signOut,
+        requestPasswordReset,
+        updatePassword,
+        recoveryMode,
         refreshBusiness,
       }}
     >
