@@ -2,108 +2,106 @@
 
 Appointment-booking SaaS for service businesses: bookings, calendar, customers,
 staff, services, analytics, a public booking page, and an AI business assistant
-that answers questions from your own data.
+that answers questions from business data.
 
 Built with TanStack Start (React 19 + Vite), Tailwind CSS v4, and Supabase
-(Lovable Cloud) for database, auth, and row-level security.
+for database, auth, and row-level security.
 
 ## Requirements
 
-- Node.js 20 or newer (Bun also works and is what the project is developed with)
-- A Supabase project (or Lovable Cloud, which provisions one for you)
+- Node.js 20 or newer (Bun also works)
+- A Supabase project
 
 ## Setup
 
 ```sh
-npm install          # or: bun install
-cp .env.example .env # fill in your project values
-npm run dev          # http://localhost:8080
+npm install
+cp .env.example .env
+npm run dev
 ```
 
 Commands:
 
-| Command            | What it does                      |
-| ------------------ | --------------------------------- |
-| `npm run dev`      | Start the dev server on port 8080 |
-| `npm run build`    | Production build                  |
-| `npx tsc --noEmit` | TypeScript typecheck              |
-| `npm run lint`     | Lint                              |
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Production build |
+| `npx tsc --noEmit` | TypeScript typecheck |
+| `npm run lint` | Lint |
 
-## Database
+## Database and security
 
-Migrations live in `supabase/migrations/`. Apply them in order to a fresh
-project with the Supabase CLI:
+Migrations live in `supabase/migrations/` and are applied in order with the
+Supabase CLI:
 
 ```sh
 supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-Tables: `businesses`, `business_members`, `locations`, `services`, `staff`,
-`working_hours`, `customers`, `bookings`, `payments`, `notifications`,
-`holidays`.
+The application uses business-scoped RLS, protected membership/role changes,
+server-side booking validation, business-timezone working hours, conflict
+detection, buffers, holidays, and secure RPCs for public booking.
 
-Every table has row-level security enabled and is scoped by business
-membership, so one business can never read or write another's data.
+Plan entitlements are also enforced at the database boundary. Free, Pro and
+Ultimate limits cover active staff, locations and services, while paid
+features are checked through `bookora_plan_allows_feature`. Direct browser
+attempts to change plan/billing state are rejected; billing automation must
+use the server-side/service role path.
 
-Security is enforced at the database level (RLS policies, row-level trigger
-guards, and the `public_create_booking` / `get_available_slots` RPCs). The
-migrations `20260917_001_secure_membership_and_public_data` and
-`20260917_002_booking_engine_and_settings` add:
+The repository's security work was previously tested against a local
+PostgreSQL environment. A remote Supabase project still needs its migrations
+applied and independently verified before production use.
 
-- membership protection (no self-join into other businesses, no
-  self-promotion to owner/admin, last-owner protection),
-- removal of all anonymous INSERT paths (public booking goes through the
-  validating RPC only),
-- server-side booking validation: business-timezone working hours,
-  per-staff conflict detection with an advisory lock (no double-booking
-  race), buffer, holidays, and input validation,
-- booking/payment integrity triggers for all writers (overlapping
-  appointments rejected; payment status derived from the payments table;
-  overpayment and cross-business payments rejected).
+## Product status
 
-This was verified against a local PostgreSQL 18.4 instance with a 60-case
-test suite (role escalation, tenant isolation, anonymous access, conflict
-and concurrency, buffers, holidays, timezones, payments). It has **not**
-been verified against a remote Supabase project — apply the migrations
-there and re-run the checks before trusting it in production.
+| Area | State |
+| --- | --- |
+| Authentication and protected routes | Implemented |
+| Business onboarding | Implemented |
+| Tenant isolation / RLS | Implemented; remote verification still required |
+| Booking engine | Implemented with database validation |
+| Dashboard / bookings / calendar | Implemented |
+| Customers / staff / services | Implemented |
+| Analytics / CSV export | Implemented and plan-gated |
+| AI business assistant | Implemented and Pro/Ultimate gated |
+| Public booking | Implemented through validated database RPCs |
+| Manual payment ledger | Implemented |
+| Free / Pro / Ultimate entitlements | Database-enforced limits and feature gates |
+| Online card payments | Not configured; no provider credentials committed |
+| Email/SMS delivery | Not configured; no provider credentials committed |
 
-## Environment variables
+Anything requiring an external provider remains disabled until that provider is
+configured. No fake payment, notification, or AI capability should be presented
+as production-ready.
 
-See `.env.example`. `VITE_*` values are public and shipped to the browser.
-The non-prefixed values are read only on the server. `LOVABLE_API_KEY` powers
-the AI assistant; without it the assistant reports that AI is not configured.
+## Environment
 
-Never commit real keys. Service-role keys are not used by this codebase.
+See `.env.example`. Client-visible `VITE_*` values are safe to expose in the
+browser. Server-only secrets must never be committed.
 
-## Feature status (honest)
+The AI assistant requires the configured AI gateway/provider environment.
+Supabase requires the configured project URL and publishable key.
 
-| Area                                                                      | State                                                                                                |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Sign up / sign in / session / protected routes                            | Working, tested                                                                                      |
-| Business onboarding (business, first service, first staff, working hours) | Working, tested                                                                                      |
-| Business data isolation (RLS + triggers)                                  | Working — 60-case DB test suite on local PostgreSQL; not yet verified on the remote Supabase project |
-| Booking engine (conflicts, working hours, buffer, holidays, timezones)    | Working — enforced in the database, verified by the test suite                                       |
-| Dashboard, services, staff, customers, bookings, analytics screens        | Working, with loading/error/empty states                                                             |
-| AI business assistant (English + Urdu, real data)                         | Working, tested                                                                                      |
-| Multi-language (EN/UR/AR/ES/FR) + RTL, light/dark themes                  | Working                                                                                              |
-| Public booking page                                                       | Working — secure RPC only, real availability, business-timezone slots                                |
-| Manual payment tracking (deposits, balances)                              | Recordable from the bookings page; balance/status derived by DB triggers                             |
-| Online card payments (Stripe/Paddle), refunds, receipts                   | **Not implemented**                                                                                  |
-| Email / SMS / push notifications and reminders                            | **Not delivered** — no provider configured                                                           |
-| Plan limits (Free / Pro / Ultimate)                                       | UI only, not enforced server-side                                                                    |
+## Verification
 
-Anything marked not implemented is not wired to a real provider. Do not treat
-it as production-ready.
+Every push to `main` now runs GitHub Actions for:
+
+1. `npm ci`
+2. `npx tsc --noEmit`
+3. `npm run build`
+
+Check the repository Actions tab for the latest verification result.
 
 ## Deployment
 
-Publish from Lovable, or build with `npm run build` and deploy the output to any
-host that supports the Vite/TanStack Start edge output, with the same
-environment variables set.
+The application is designed for a TanStack Start-compatible host. Deployment
+requires a configured hosting provider and the same required environment
+variables. This repository does not contain provider credentials and therefore
+must not claim a live deployment until the deployment service reports a
+successful release.
 
-## Backup and export
+## Backup
 
 - Database: `supabase db dump -f backup.sql`
-- Source: push the repository to GitHub, or use the zipped export in
-  `docs/` / the archive produced by `npm run build` inputs.
+- Source: GitHub repository history
