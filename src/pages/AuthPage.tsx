@@ -13,18 +13,19 @@ import {
 } from "lucide-react";
 
 export function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, requestPasswordReset, updatePassword, recoveryMode } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const switchMode = (nextMode: "signin" | "signup") => {
+  const switchMode = (nextMode: "signin" | "signup" | "reset") => {
     setMode(nextMode);
     setError(null);
     setNotice(null);
@@ -35,6 +36,42 @@ export function AuthPage() {
     setError(null);
     setNotice(null);
     setLoading(true);
+
+    if (recoveryMode) {
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters");
+        setLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        setLoading(false);
+        return;
+      }
+      const result = await updatePassword(password);
+      if (result.error) setError(result.error);
+      else {
+        setNotice("Password updated successfully. You can now sign in with your new password.");
+        setPassword("");
+        setConfirmPassword("");
+        setMode("signin");
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (mode === "reset") {
+      if (!email.trim()) {
+        setError("Please enter your email address");
+        setLoading(false);
+        return;
+      }
+      const result = await requestPasswordReset(email);
+      if (result.error) setError(result.error);
+      else setNotice("Password reset email sent. Check your inbox and follow the secure reset link.");
+      setLoading(false);
+      return;
+    }
 
     if (mode === "signin") {
       const result = await signIn(email, password);
@@ -134,6 +171,7 @@ export function AuthPage() {
             </div>
 
             <div className="mb-6">
+              {!recoveryMode && (
               <div className="mb-5 flex rounded-xl bg-gray-100 p-1 dark:bg-gray-900">
                 {[
                   ["signin", "Sign in"],
@@ -149,14 +187,19 @@ export function AuthPage() {
                   </button>
                 ))}
               </div>
+              )}
 
               <h2 className="text-2xl font-bold tracking-tight">
-                {mode === "signin" ? "Welcome back" : "Start your workspace"}
+                {recoveryMode ? "Set a new password" : mode === "signin" ? "Welcome back" : mode === "reset" ? "Reset your password" : "Start your workspace"}
               </h2>
               <p className="mt-1.5 text-sm text-gray-500">
-                {mode === "signin"
-                  ? "Sign in to open your BOOKORA dashboard."
-                  : "Create your account and set up your business in a few steps."}
+                {recoveryMode
+                  ? "Choose a new password for your BOOKORA account."
+                  : mode === "signin"
+                    ? "Sign in to open your BOOKORA dashboard."
+                    : mode === "reset"
+                      ? "Enter your account email and we will send you a secure reset link."
+                      : "Create your account and set up your business in a few steps."}
               </p>
             </div>
 
@@ -190,6 +233,7 @@ export function AuthPage() {
                   />
                 </div>
 
+                {mode !== "reset" && (
                 <div>
                   <label className="label">Password</label>
                   <div className="relative">
@@ -213,6 +257,14 @@ export function AuthPage() {
                     </button>
                   </div>
                 </div>
+                )}
+
+                {(recoveryMode || mode === "reset") && mode !== "reset" && (
+                  <div>
+                    <label className="label">Confirm New Password</label>
+                    <input type="password" className="input" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" placeholder="Repeat your new password" />
+                  </div>
+                )}
 
                 {error && (
                   <div
@@ -240,23 +292,25 @@ export function AuthPage() {
                 >
                   {loading ? <Loader2 size={17} className="animate-spin" /> : <ArrowRight size={17} />}
                   {loading
-                    ? mode === "signin"
-                      ? "Signing in..."
-                      : "Creating account..."
-                    : mode === "signin"
-                      ? "Open Dashboard"
-                      : "Create Account"}
+                    ? recoveryMode ? "Updating password..." : mode === "reset" ? "Sending reset link..." : mode === "signin" ? "Signing in..." : "Creating account..."
+                    : recoveryMode ? "Update Password" : mode === "reset" ? "Send Reset Link" : mode === "signin" ? "Open Dashboard" : "Create Account"}
                 </button>
               </form>
 
+              {!recoveryMode && mode === "signin" && (
+                <div className="mt-4 text-center">
+                  <button type="button" onClick={() => switchMode("reset")} className="text-sm font-medium text-primary-600 hover:underline">Forgot password?</button>
+                </div>
+              )}
+
               <div className="mt-6 text-center text-sm text-gray-500">
-                {mode === "signin" ? "New to BOOKORA? " : "Already have an account? "}
+                {mode === "reset" ? "Remembered your password? " : mode === "signin" ? "New to BOOKORA? " : "Already have an account? "}
                 <button
                   type="button"
                   onClick={() => switchMode(mode === "signin" ? "signup" : "signin")}
                   className="font-medium text-primary-600 hover:underline"
                 >
-                  {mode === "signin" ? "Create an account" : "Sign in"}
+                  {mode === "reset" ? "Sign in" : mode === "signin" ? "Create an account" : "Sign in"}
                 </button>
               </div>
             </div>
