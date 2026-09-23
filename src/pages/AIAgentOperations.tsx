@@ -62,6 +62,22 @@ export function AIAgentOperations() {
     setBusy(false);
   };
 
+  const runTool = async (toolId: string, input: Record<string, unknown>) => {
+    if (!business || busy) return;
+    setBusy(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+      const response = await fetch(base + "/functions/v1/ai-agent-tool-gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(session.session?.access_token ? { Authorization: "Bearer " + session.session.access_token } : {}) },
+        body: JSON.stringify({ toolId, input }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) console.error("[agent-tool]", payload.error);
+    } finally { setBusy(false); }
+  };
+
   const createHandoff = async () => {
     if (!business || !agentId || busy) return;
     setBusy(true);
@@ -169,7 +185,7 @@ export function AIAgentOperations() {
           <div className="flex items-center gap-2"><Wrench size={18}/><h2 className="font-semibold">Agent tools</h2></div>
           <p className="mt-1 text-xs text-gray-500">Every new custom tool starts approval-required.</p>
           <div className="mt-4 flex gap-2"><input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="Tool name"/><button className="btn-primary" onClick={()=>void addTool()} disabled={busy||!name.trim()}><Plus size={15}/>Add</button></div>
-          <div className="mt-4 space-y-2">{tools.filter(t=>t.agent_id===agentId).map(t=><div key={t.id} className="flex items-center justify-between rounded-xl border p-3 dark:border-gray-800"><span className="text-sm">{t.name}</span><span className="text-xs text-gray-500">{t.approval_required?"Approval required":"Auto"}</span></div>)}</div>
+          <div className="mt-4 space-y-2">{tools.filter(t=>t.agent_id===agentId).map(t=><div key={t.id} className="flex items-center justify-between gap-3 rounded-xl border p-3 dark:border-gray-800"><div><span className="text-sm">{t.name}</span><p className="text-xs text-gray-500">{t.tool_type} · {t.approval_required?"Approval required":"Auto"}</p></div><button className="btn-secondary" disabled={busy} onClick={()=>void runTool(t.id, t.tool_type==="knowledge"?{query:"What services and policies are available?"}:t.tool_type==="analytics"?{question:"Summarize current business status"}:{title:"Follow up on an AI-generated task"})}>Test</button></div>)}</div>
         </section>
         <section className="card p-5">
           <div className="flex items-center gap-2"><Hand size={18}/><h2 className="font-semibold">Human handoff</h2></div>
@@ -196,7 +212,7 @@ export function AIAgentOperations() {
         <section className="card p-5 lg:col-span-2">
           <div className="flex items-center gap-2"><CalendarClock size={18}/><h2 className="font-semibold">Deployment channels</h2></div>
           <div className="mt-4 flex flex-wrap gap-2">{(["dashboard","public_web","embed","api","workflow"] as const).map(c=><button key={c} className="btn-secondary" onClick={()=>void deploy(c)} disabled={busy||!agentId}><CheckCircle2 size={14}/>{c.replace("_"," ")}</button>)}</div>
-          <div className="mt-4 grid gap-2 md:grid-cols-2">{deployments.filter(d=>d.agent_id===agentId).map(d=><div key={d.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span className="capitalize">{d.channel.replace("_"," ")}</span><span>{d.enabled?"Enabled":"Configured"}</span></div>{d.public_key&&<code className="text-[10px] text-gray-500">{d.public_key}</code>}</div>)}</div>
+          <div className="mt-4 grid gap-2 md:grid-cols-2">{deployments.filter(d=>d.agent_id===agentId).map(d=><div key={d.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span className="capitalize">{d.channel.replace("_"," ")}</span><span>{d.enabled?"Enabled":"Configured"}</span></div>{d.public_key&&<code className="text-[10px] text-gray-500">{d.public_key}</code>}{(d.channel==="public_web"||d.channel==="embed")&&d.public_key&&<button className="ml-2 text-xs text-primary-600" onClick={()=>navigator.clipboard?.writeText(window.location.origin+"/ai-chat/"+d.public_key)}>Copy chat URL</button>}</div>)}</div>
         </section>
       </div>
     </div>
