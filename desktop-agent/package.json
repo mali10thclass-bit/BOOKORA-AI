@@ -9,7 +9,7 @@
   "build": {
     "appId": "ai.bookora.agent",
     "productName": "BOOKORA AI Agent",
-    "artifactName": "BOOKORA-AI-Agent-Portable-\${version}.\${ext}",
+    "artifactName": "BOOKORA-AI-Agent-Portable-${version}.${ext}",
     "asar": true,
     "win": { "target": [{ "target": "portable", "arch": ["x64"] }] }
   }
