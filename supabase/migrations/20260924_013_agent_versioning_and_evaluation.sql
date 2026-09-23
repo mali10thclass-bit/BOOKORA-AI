@@ -52,6 +52,7 @@ create table if not exists public.ai_agent_eval_results (
 create index if not exists ai_agent_versions_agent_idx on public.ai_agent_versions(agent_id, version_number desc);
 create index if not exists ai_agent_eval_runs_agent_idx on public.ai_agent_eval_runs(agent_id, created_at desc);
 create index if not exists ai_agent_eval_results_run_idx on public.ai_agent_eval_results(run_id);
+create unique index if not exists ai_evolution_one_queued_per_agent_idx on public.ai_evolution_runs(business_id, agent_id) where status='queued' and agent_id is not null;
 
 alter table public.ai_agent_versions enable row level security;
 alter table public.ai_agent_eval_runs enable row level security;
