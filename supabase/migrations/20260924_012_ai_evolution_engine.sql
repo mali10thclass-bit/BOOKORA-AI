@@ -134,7 +134,9 @@ values
  ('Anthropic newsroom','provider','https://www.anthropic.com/news','official'),
  ('Google Developers AI updates','provider','https://developers.googleblog.com/','official'),
  ('Meta AI blog','provider','https://ai.meta.com/blog/','official'),
- ('Microsoft AI agent documentation','agent_platform','https://learn.microsoft.com/en-us/microsoft-copilot-studio/','official')
+ ('Microsoft AI agent documentation','agent_platform','https://learn.microsoft.com/en-us/microsoft-copilot-studio/','official'),
+ ('Hugging Face model hub','provider','https://huggingface.co/models','verified'),
+ ('Model Context Protocol','agent_platform','https://modelcontextprotocol.io/','official')
 on conflict (source_url) do nothing;
 
 create or replace function public.ai_runtime_model(p_business_id uuid, p_agent_id uuid)
