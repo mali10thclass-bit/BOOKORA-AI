@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
-import { BookOpen, FileText, Globe, Plus, RefreshCw, Trash2, Sparkles } from "lucide-react";
+import { BookOpen, FileText, Globe, Plus, RefreshCw, Trash2, Sparkles, Play, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
+import { askBusinessAssistant } from "@/lib/assistant.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 type Source = {
   id: string;
   name: string;
   source_type: string;
-  source_url: string | null;
-  content_text: string | null;
-  status: string;
+  content: string;
+  metadata: Record<string, unknown>;
+  is_active: boolean;
   created_at: string;
 };
 
 export function AITrainer() {
   const { business } = useAuth();
+  const ask = useServerFn(askBusinessAssistant);
   const [sources, setSources] = useState<Source[]>([]);
   const [name, setName] = useState("");
   const [type, setType] = useState<"text" | "faq" | "url" | "policy">("text");
@@ -23,13 +26,16 @@ export function AITrainer() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [testPrompt, setTestPrompt] = useState("");
+  const [testAnswer, setTestAnswer] = useState("");
+  const [testing, setTesting] = useState(false);
 
   const load = async () => {
     if (!business) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("ai_knowledge_sources")
-      .select("id,name,source_type,source_url,content_text,status,created_at")
+      .select("id,name,source_type,content,metadata,is_active,created_at")
       .eq("business_id", business.id)
       .order("created_at", { ascending: false });
     if (!error) setSources((data ?? []) as Source[]);
@@ -45,9 +51,9 @@ export function AITrainer() {
       business_id: business.id,
       name: name.trim(),
       source_type: type,
-      source_url: url.trim() || null,
-      content_text: content.trim() || null,
-      status: "active",
+      content: content.trim() || url.trim(),
+      metadata: url.trim() ? { url: url.trim(), ingestion: "pending" } : { ingestion: "manual" },
+      is_active: true,
     });
     if (!error) {
       setName(""); setUrl(""); setContent("");
@@ -117,8 +123,8 @@ export function AITrainer() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{source.name}</p>
-                      <p className="mt-1 text-xs text-gray-500">{source.source_type} · {source.status}</p>
-                      {source.content_text && <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{source.content_text}</p>}
+                      <p className="mt-1 text-xs text-gray-500">{source.source_type} · {source.is_active ? "active" : "disabled"}</p>
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{source.content}</p>
                     </div>
                     <button className="icon-button text-error-600" title="Delete source" onClick={() => void remove(source.id)}><Trash2 size={16} /></button>
                   </div>
@@ -127,6 +133,30 @@ export function AITrainer() {
             )}
           </section>
         </div>
+
+        <section className="card p-5">
+          <div className="flex items-center gap-2"><Play size={18} className="text-primary-600" /><h2 className="font-semibold">Agent evaluation lab</h2></div>
+          <p className="mt-1 text-xs text-gray-500">Run a real BOOKORA assistant query against the current business context and keep the result as a training run.</p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3">
+              <textarea className="input min-h-28" placeholder="Test prompt, e.g. What are our cancellation rules?" value={testPrompt} onChange={(e) => setTestPrompt(e.target.value)} />
+              <button className="btn-primary" disabled={!testPrompt.trim() || testing} onClick={() => void (async () => {
+                if (!business || !testPrompt.trim()) return;
+                setTesting(true); setTestAnswer("");
+                try {
+                  const result = await ask({ data: { question: testPrompt.trim(), language: "en" } });
+                  const answer = result.answer ?? result.error ?? "No answer.";
+                  setTestAnswer(answer);
+                  await supabase.rpc("record_ai_training_run", { p_business_id: business.id, p_prompt: testPrompt.trim(), p_expected_answer: null, p_actual_answer: answer, p_score: null });
+                } finally { setTesting(false); }
+              })()}><Play size={15} /> {testing ? "Testing..." : "Run evaluation"}</button>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900">
+              <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck size={16} className="text-primary-600" />Latest result</div>
+              <p className="mt-3 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300">{testAnswer || "Run a test to capture the assistant response."}</p>
+            </div>
+          </div>
+        </section>
       </div>
     </PlanGate>
   );
