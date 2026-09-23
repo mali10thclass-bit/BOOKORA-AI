@@ -1135,6 +1135,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ai_runtime_model: {
+        Args: { p_business_id: string; p_agent_id: string };
+        Returns: string;
+      };
       ai_business_snapshot: {
         Args: { p_business_id: string; p_question?: string };
         Returns: Json;
