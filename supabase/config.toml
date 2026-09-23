@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.webhook-worker]
 verify_jwt = false
+
+[functions.ai-evolution-worker]
+verify_jwt = false
+
+[functions.ai-evolution-scheduler]
+verify_jwt = false
