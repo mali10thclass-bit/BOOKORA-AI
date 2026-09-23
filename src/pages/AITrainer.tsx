@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
 import { BookOpen, FileText, Globe, Plus, RefreshCw, Trash2, Sparkles, Play, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,9 +10,9 @@ type Source = {
   id: string;
   name: string;
   source_type: string;
-  content: string;
+  content_text: string | null;
   metadata: Record<string, unknown>;
-  is_active: boolean;
+  status: string;
   created_at: string;
 };
 
@@ -37,7 +36,7 @@ export function AITrainer() {
     setLoading(true);
     const { data, error } = await supabase
       .from("ai_knowledge_sources")
-      .select("id,name,source_type,content,metadata,is_active,created_at")
+      .select("id,name,source_type,content_text,metadata,status,created_at")
       .eq("business_id", business.id)
       .order("created_at", { ascending: false });
     if (!error) setSources((data ?? []) as Source[]);
@@ -55,9 +54,10 @@ export function AITrainer() {
         business_id: business.id,
         name: name.trim(),
         source_type: type,
-        content: content.trim() || url.trim(),
+        content_text: content.trim() || url.trim(),
+        source_url: url.trim() || null,
         metadata: url.trim() ? { url: url.trim(), ingestion: "pending" } : { ingestion: "manual" },
-        is_active: true,
+        status: "active",
       })
       .select("id")
       .single();
@@ -130,8 +130,8 @@ export function AITrainer() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium">{source.name}</p>
-                      <p className="mt-1 text-xs text-gray-500">{source.source_type} · {source.is_active ? "active" : "disabled"}</p>
-                      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{source.content}</p>
+                      <p className="mt-1 text-xs text-gray-500">{source.source_type} · {source.status}</p>
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{source.content_text ?? ""}</p>
                       <button
                         className="mt-3 btn-secondary"
                         disabled={indexingId === source.id}
