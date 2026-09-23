@@ -573,8 +573,7 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-    };
+      },
       resources: {
         Row: {
           id: string;
