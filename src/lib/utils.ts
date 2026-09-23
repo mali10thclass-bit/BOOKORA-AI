@@ -197,8 +197,22 @@ export function getPlanLimits(plan: PlanTier | string | null | undefined) {
         "Advanced automation",
       ],
     },
+    enterprise: {
+      maxStaff: 9999,
+      maxLocations: 9999,
+      maxServices: 9999,
+      features: [
+        "Everything in Ultimate",
+        "Enterprise audit trail",
+        "API & webhooks",
+        "Developer platform",
+        "Advanced AI agents",
+        "Granular enterprise controls",
+        "Custom support",
+      ],
+    },
   };
-  return limits[(plan ?? "free") as PlanTier];
+  return limits[(plan ?? "free") as PlanTier] ?? limits.free;
 }
 
 export function downloadCSV(filename: string, rows: Record<string, unknown>[]) {

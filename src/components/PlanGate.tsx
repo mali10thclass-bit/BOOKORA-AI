@@ -11,7 +11,7 @@ interface PlanGateProps {
   featureName: string;
 }
 
-const rank: Record<PlanTier, number> = { free: 0, pro: 1, ultimate: 2 };
+const rank: Record<PlanTier, number> = { free: 0, pro: 1, ultimate: 2, enterprise: 3 };
 
 export function PlanGate({ minimumPlan, children, featureName }: PlanGateProps) {
   const { business } = useAuth();
@@ -27,14 +27,14 @@ export function PlanGate({ minimumPlan, children, featureName }: PlanGateProps) 
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400">
           <Lock size={24} />
         </div>
-        <h1 className="mt-5 text-xl font-bold">{featureName} is a {minimumPlan === "ultimate" ? "Ultimate" : "Pro"} feature</h1>
+        <h1 className="mt-5 text-xl font-bold">{featureName} is a {minimumPlan === "enterprise" ? "Enterprise" : minimumPlan === "ultimate" ? "Ultimate" : "Pro"} feature</h1>
         <p className="mt-2 text-sm leading-6 text-gray-500">
           Your current {current} plan does not include this feature. Upgrade to unlock it.
         </p>
         <div className="mt-5 rounded-xl bg-gray-50 p-4 text-left dark:bg-gray-800/50">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Sparkles size={16} className="text-primary-600" />
-            {minimumPlan === "ultimate" ? "Ultimate" : "Pro"} includes
+            {minimumPlan === "enterprise" ? "Enterprise" : minimumPlan === "ultimate" ? "Ultimate" : "Pro"} includes
           </div>
           <ul className="mt-2 space-y-1 text-xs text-gray-500">
             {limits.features.slice(0, 5).map((feature) => (

@@ -1,0 +1,41 @@
+name: BOOKORA AI Workers
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/10 * * * *"
+permissions:
+  contents: read
+jobs:
+  workers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run scheduler
+        env:
+          SUPABASE_URL: ${{ secrets.BOOKORA_SUPABASE_URL }}
+          BOOKORA_WORKER_SECRET: ${{ secrets.BOOKORA_WORKER_SECRET }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/ai-scheduler-worker" -H "x-bookora-worker-secret: $BOOKORA_WORKER_SECRET"
+      - name: Run evolution worker
+        env:
+          SUPABASE_URL: ${{ secrets.BOOKORA_SUPABASE_URL }}
+          BOOKORA_WORKER_SECRET: ${{ secrets.BOOKORA_WORKER_SECRET }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/ai-evolution-worker" -H "x-bookora-worker-secret: $BOOKORA_WORKER_SECRET"
+      - name: Run evaluation worker
+        env:
+          SUPABASE_URL: ${{ secrets.BOOKORA_SUPABASE_URL }}
+          BOOKORA_WORKER_SECRET: ${{ secrets.BOOKORA_WORKER_SECRET }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/ai-eval-worker" -H "x-bookora-worker-secret: $BOOKORA_WORKER_SECRET"
+      - name: Run generation worker
+        env:
+          SUPABASE_URL: ${{ secrets.BOOKORA_SUPABASE_URL }}
+          BOOKORA_WORKER_SECRET: ${{ secrets.BOOKORA_WORKER_SECRET }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/ai-generation-worker" -H "x-bookora-worker-secret: $BOOKORA_WORKER_SECRET"
+      - name: Run knowledge refresh worker
+        env:
+          SUPABASE_URL: ${{ secrets.BOOKORA_SUPABASE_URL }}
+          BOOKORA_WORKER_SECRET: ${{ secrets.BOOKORA_WORKER_SECRET }}
+        run: |
+          curl -fsS -X POST "$SUPABASE_URL/functions/v1/ai-knowledge-refresh-worker" -H "x-bookora-worker-secret: $BOOKORA_WORKER_SECRET"

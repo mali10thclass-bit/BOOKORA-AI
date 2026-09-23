@@ -1,5 +1,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
+// AI Agent Studio tables are maintained here alongside the generated Supabase schema until live schema generation is restored.
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -573,12 +575,688 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      },
+      resources: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          type: string;
+          capacity: number;
+          location_id: string|null;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          type?: string;
+          capacity?: number;
+          location_id?: string|null;
+          description?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          type?: string;
+          capacity?: number;
+          location_id?: string|null;
+          description?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      waitlist_entries: {
+        Row: {
+          id: string;
+          business_id: string;
+          customer_id: string;
+          service_id: string | null;
+          preferred_start: string|null;
+          preferred_end: string|null;
+          status: string;
+          priority: number;
+          notes: string|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          customer_id: string;
+          service_id: string | null;
+          preferred_start?: string|null;
+          preferred_end?: string|null;
+          status?: string;
+          priority?: number;
+          notes?: string|null;
+        };
+        Update: {
+          business_id?: string;
+          customer_id?: string;
+          service_id?: string;
+          preferred_start?: string|null;
+          preferred_end?: string|null;
+          status?: string;
+          notes?: string|null;
+        };
+        Relationships: [];
+      };
+      packages: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          price: number;
+          validity_days: number|null;
+          credits: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          price?: number;
+          validity_days?: number|null;
+          credits?: number;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          price?: number;
+          validity_days?: number|null;
+          credits?: number;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      forms: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          schema: Json;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          schema?: Json;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          schema?: Json;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      crm_leads: {
+        Row: { id: string; business_id: string; name: string; source: string; status: string; value: number; created_at: string };
+        Insert: { business_id: string; name: string; source?: string; status?: string; value?: number; };
+        Update: { business_id?: string; name?: string; source?: string; status?: string; value?: number; };
+        Relationships: [];
+      };
+      business_tasks: {
+        Row: { id: string; business_id: string; title: string; priority: string; status: string; due_at: string | null; created_at: string };
+        Insert: { business_id: string; title: string; priority?: string; status?: string; due_at?: string | null; };
+        Update: { business_id?: string; title?: string; priority?: string; status?: string; due_at?: string | null; };
+        Relationships: [];
+      };
+      inventory_products: {
+        Row: { id: string; business_id: string; name: string; sku: string | null; quantity: number; reorder_level: number; unit: string; created_at: string };
+        Insert: { business_id: string; name: string; sku?: string | null; quantity?: number; reorder_level?: number; unit?: string; };
+        Update: { business_id?: string; name?: string; sku?: string | null; quantity?: number; reorder_level?: number; unit?: string; };
+        Relationships: [];
+      };
+      support_tickets: {
+        Row: { id: string; business_id: string; subject: string; priority: string; status: string; channel: string; created_at: string };
+        Insert: { business_id: string; subject: string; priority?: string; status?: string; channel?: string; };
+        Update: { business_id?: string; subject?: string; priority?: string; status?: string; channel?: string; };
+        Relationships: [];
+      };
+      marketing_campaigns: {
+        Row: { id: string; business_id: string; name: string; channel: string; status: string; created_at: string };
+        Insert: { business_id: string; name: string; channel?: string; status?: string; };
+        Update: { business_id?: string; name?: string; channel?: string; status?: string; };
+        Relationships: [];
+      };
+      ai_knowledge_sources: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          source_type: string;
+          source_url: string | null;
+          content_text: string | null;
+          metadata: Json;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          source_type?: string;
+          source_url?: string | null;
+          content_text?: string | null;
+          metadata?: Json;
+          status?: string;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          source_type?: string;
+          source_url?: string | null;
+          content_text?: string | null;
+          metadata?: Json;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      ai_training_runs: {
+        Row: {
+          id: string;
+          business_id: string;
+          prompt: string;
+          expected_answer: string|null;
+          actual_answer: string|null;
+          score: number|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          prompt: string;
+          expected_answer?: string|null;
+          actual_answer?: string|null;
+          score?: number|null;
+        };
+        Update: {
+          business_id?: string;
+          prompt?: string;
+          expected_answer?: string|null;
+          actual_answer?: string|null;
+          score?: number|null;
+        };
+        Relationships: [];
+      };
+      automation_workflows: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          trigger_type: string;
+          definition: Json;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          trigger_type: string;
+          definition?: Json;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          trigger_type?: string;
+          definition?: Json;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      automation_runs: {
+        Row: {
+          id: string;
+          workflow_id: string;
+          business_id: string;
+          status: string;
+          input: Json;
+          output: Json;
+          started_at: string|null;
+          completed_at: string|null;
+          created_at: string;
+        };
+        Insert: {
+          workflow_id: string;
+          business_id: string;
+          status?: string;
+          input?: Json;
+          output?: Json;
+          started_at?: string|null;
+          completed_at?: string|null;
+        };
+        Update: {
+          workflow_id?: string;
+          business_id?: string;
+          status?: string;
+          input?: Json;
+          output?: Json;
+          started_at?: string|null;
+          finished_at?: string|null;
+        };
+        Relationships: [];
+      };
+      reviews: {
+        Row: {
+          id: string;
+          business_id: string;
+          customer_id: string|null;
+          rating: number;
+          title: string|null;
+          body: string|null;
+          source: string;
+          status: string;
+          response: string | null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          customer_id?: string|null;
+          rating: number;
+          title?: string|null;
+          body?: string|null;
+          source?: string;
+          status?: string;
+          response?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          customer_id?: string|null;
+          rating?: number;
+          title?: string|null;
+          body?: string|null;
+          source?: string;
+          status?: string;
+          response?: string | null;
+        };
+        Relationships: [];
+      };
+      api_keys: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scopes: string[];
+          created_by: string|null;
+          revoked_at: string|null;
+          expires_at: string|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scopes?: string[];
+          created_by?: string|null;
+          revoked_at?: string|null;
+          expires_at?: string|null;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          key_prefix?: string;
+          key_hash?: string;
+          scopes?: string[];
+          created_by?: string|null;
+          revoked_at?: string|null;
+          expires_at?: string|null;
+        };
+        Relationships: [];
+      };
+      webhooks: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          endpoint_url: string;
+          secret: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          endpoint_url: string;
+          secret: string;
+          events?: string[];
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          endpoint_url?: string;
+          secret?: string;
+          events?: string[];
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      enterprise_audit_logs: {
+        Row: {
+          id: string;
+          business_id: string;
+          actor_user_id: string|null;
+          action: string;
+          entity_type: string|null;
+          entity_id: string|null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          actor_user_id?: string|null;
+          action: string;
+          entity_type?: string|null;
+          entity_id?: string|null;
+          metadata?: Json;
+        };
+        Update: {
+          business_id?: string;
+          actor_user_id?: string|null;
+          action?: string;
+          entity_type?: string|null;
+          entity_id?: string|null;
+          metadata?: Json;
+        };
+        Relationships: [];
+      };
+      ai_knowledge_chunks: {
+        Row: {
+          id: string;
+          business_id: string;
+          source_id: string;
+          chunk_index: number;
+          content: string;
+          metadata: Json;
+          embedding: number[] | null;
+          status: string;
+          attempt_count: number;
+          last_error: string | null;
+          embedding_model: string | null;
+          embedded_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          source_id: string;
+          chunk_index?: number;
+          content: string;
+          metadata?: Json;
+          embedding?: number[] | null;
+          status?: string;
+          attempt_count?: number;
+          last_error?: string | null;
+          embedding_model?: string | null;
+          embedded_at?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          source_id?: string;
+          chunk_index?: number;
+          content?: string;
+          metadata?: Json;
+          embedding?: number[] | null;
+          status?: string;
+          attempt_count?: number;
+          last_error?: string | null;
+          embedding_model?: string | null;
+          embedded_at?: string | null;
+        };
+        Relationships: [];
+      };
+      ai_action_requests: {
+        Row: {
+          id: string;
+          business_id: string;
+          actor_user_id: string | null;
+          action_type: string;
+          target_type: string | null;
+          target_id: string | null;
+          proposal: Json;
+          status: string;
+          reason: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          executed_at: string | null;
+          executed_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          actor_user_id?: string | null;
+          action_type: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          proposal?: Json;
+          status?: string;
+          reason?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          actor_user_id?: string | null;
+          action_type?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          proposal?: Json;
+          status?: string;
+          reason?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+        };
+        Relationships: [];
       };
     };
+      ai_agents: {
+        Row: { id: string; business_id: string; name: string; description: string | null; role: string; system_prompt: string; model: string | null; status: string; config: Json; capabilities: Json; starter_prompts: Json; created_by: string | null; created_at: string; updated_at: string; auto_update_enabled: boolean; evolution_policy: Json; };
+        Insert: { id?: string; business_id: string; name: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; created_by?: string | null; auto_update_enabled?: boolean; evolution_policy?: Json; };
+        Update: { name?: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; auto_update_enabled?: boolean; evolution_policy?: Json; };
+        Relationships: [];
+      };
+      ai_agent_memories: {
+        Row: { id: string; business_id: string; agent_id: string; memory_type: string; content: string; source: string; confidence: number | null; metadata: Json; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; memory_type: string; content: string; source?: string; confidence?: number | null; metadata?: Json; };
+        Update: { memory_type?: string; content?: string; source?: string; confidence?: number | null; metadata?: Json; };
+        Relationships: [];
+      };
+      ai_conversations: {
+        Row: { id: string; business_id: string; agent_id: string; user_id: string | null; title: string | null; summary: string | null; status: string; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; user_id?: string | null; title?: string | null; summary?: string | null; status?: string; };
+        Update: { title?: string | null; summary?: string | null; status?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_messages: {
+        Row: { id: string; conversation_id: string; business_id: string; role: string; content: string; citations: Json; tool_calls: Json; created_at: string; };
+        Insert: { id?: string; conversation_id: string; business_id: string; role: string; content: string; citations?: Json; tool_calls?: Json; };
+        Update: { content?: string; citations?: Json; tool_calls?: Json; };
+        Relationships: [];
+      };
+      ai_generation_jobs: {
+        Row: { id: string; business_id: string; agent_id: string | null; user_id: string | null; job_type: string; prompt: string; status: string; input: Json; output: Json; error: string | null; created_at: string; started_at: string | null; completed_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id?: string | null; user_id?: string | null; job_type: string; prompt: string; status?: string; input?: Json; output?: Json; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Update: { status?: string; output?: Json; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_tools: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; description: string | null; tool_type: string; config: Json; approval_required: boolean; enabled: boolean; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; description?: string | null; tool_type: string; config?: Json; approval_required?: boolean; enabled?: boolean; };
+        Update: { name?: string; description?: string | null; tool_type?: string; config?: Json; approval_required?: boolean; enabled?: boolean; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_schedules: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone: string; enabled: boolean; interval_minutes: number; last_run_at: string | null; next_run_at: string | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone?: string; enabled?: boolean; interval_minutes?: number; last_run_at?: string | null; next_run_at?: string | null; };
+        Update: { name?: string; cron?: string; prompt?: string; timezone?: string; enabled?: boolean; interval_minutes?: number; last_run_at?: string | null; next_run_at?: string | null; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_handoffs: {
+        Row: { id: string; business_id: string; agent_id: string; conversation_id: string | null; reason: string; status: string; assigned_to: string | null; notes: string | null; created_at: string; resolved_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id: string; conversation_id?: string | null; reason: string; status?: string; assigned_to?: string | null; notes?: string | null; };
+        Update: { status?: string; assigned_to?: string | null; notes?: string | null; resolved_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_evaluations: {
+        Row: { id: string; business_id: string; agent_id: string; conversation_id: string | null; question: string; answer: string; grounded: boolean; support_score: number | null; citation_count: number; evaluator: string | null; feedback: string | null; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; conversation_id?: string | null; question: string; answer: string; grounded?: boolean; support_score?: number | null; citation_count?: number; evaluator?: string | null; feedback?: string | null; };
+        Update: { grounded?: boolean; support_score?: number | null; citation_count?: number; evaluator?: string | null; feedback?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_deployments: {
+        Row: { id: string; business_id: string; agent_id: string; channel: string; public_key: string | null; settings: Json; enabled: boolean; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; channel: string; public_key?: string | null; settings?: Json; enabled?: boolean; };
+        Update: { channel?: string; public_key?: string | null; settings?: Json; enabled?: boolean; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_versions: {
+        Row: { id: string; business_id: string; agent_id: string; version_number: number; reason: string; system_prompt: string | null; model: string | null; config: Json; capabilities: Json; tool_registry: Json; created_by: string | null; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; version_number: number; reason?: string; system_prompt?: string | null; model?: string | null; config?: Json; capabilities?: Json; tool_registry?: Json; created_by?: string | null; };
+        Update: { reason?: string; };
+        Relationships: [];
+      };
+      ai_agent_eval_runs: {
+        Row: { id: string; business_id: string; agent_id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; error: string | null; created_at: string; completed_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id: string; status?: string; case_count?: number; passed_count?: number; score?: number | null; summary?: string | null; error?: string | null; };
+        Update: { status?: string; case_count?: number; passed_count?: number; score?: number | null; summary?: string | null; error?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_eval_results: {
+        Row: { id: string; run_id: string; business_id: string; agent_id: string; case_id: string; input: string; output: string | null; passed: boolean; score: number; feedback: string | null; created_at: string; };
+        Insert: { id?: string; run_id: string; business_id: string; agent_id: string; case_id: string; input: string; output?: string | null; passed?: boolean; score?: number; feedback?: string | null; };
+        Update: { output?: string | null; passed?: boolean; score?: number; feedback?: string | null; };
+        Relationships: [];
+      };
+      ai_model_catalog: {
+        Row: { id: string; provider: string; model_key: string; runtime_model: string | null; runtime_compatible: boolean; display_name: string; capabilities: Json; context_window: number | null; status: string; source_url: string | null; evidence: Json; discovered_at: string; last_seen_at: string; updated_at: string; };
+        Insert: { id?: string; provider: string; model_key: string; runtime_model?: string | null; runtime_compatible?: boolean; display_name: string; capabilities?: Json; context_window?: number | null; status?: string; source_url?: string | null; evidence?: Json; discovered_at?: string; last_seen_at?: string; updated_at?: string; };
+        Update: { runtime_model?: string | null; runtime_compatible?: boolean; display_name?: string; capabilities?: Json; context_window?: number | null; status?: string; source_url?: string | null; evidence?: Json; last_seen_at?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_trainer_sources: {
+        Row: { id: string; name: string; source_type: string; source_url: string; trust_level: string; enabled: boolean; fetch_interval_minutes: number; last_fetched_at: string | null; last_http_status: number | null; content_digest: string | null; last_title: string | null; last_excerpt: string | null; metadata: Json; created_at: string; updated_at: string; };
+        Insert: { id?: string; name: string; source_type: string; source_url: string; trust_level?: string; enabled?: boolean; fetch_interval_minutes?: number; last_fetched_at?: string | null; last_http_status?: number | null; content_digest?: string | null; last_title?: string | null; last_excerpt?: string | null; metadata?: Json; };
+        Update: { name?: string; source_type?: string; source_url?: string; trust_level?: string; enabled?: boolean; fetch_interval_minutes?: number; last_fetched_at?: string | null; last_http_status?: number | null; content_digest?: string | null; last_title?: string | null; last_excerpt?: string | null; metadata?: Json; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_evolution_runs: {
+        Row: { id: string; business_id: string | null; agent_id: string | null; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; error: string | null; started_at: string | null; completed_at: string | null; created_at: string; };
+        Insert: { id?: string; business_id?: string | null; agent_id?: string | null; status?: string; trigger?: string; sources_scanned?: number; models_discovered?: number; candidates_created?: number; summary?: string | null; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Update: { status?: string; summary?: string | null; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_improvement_candidates: {
+        Row: { id: string; business_id: string | null; agent_id: string | null; evolution_run_id: string | null; improvement_type: string; title: string; proposal: Json; evidence: Json; risk_level: string; baseline_score: number | null; candidate_score: number | null; regression_passed: boolean; approval_status: string; created_at: string; reviewed_at: string | null; };
+        Insert: { id?: string; business_id?: string | null; agent_id?: string | null; evolution_run_id?: string | null; improvement_type: string; title: string; proposal?: Json; evidence?: Json; risk_level?: string; baseline_score?: number | null; candidate_score?: number | null; regression_passed?: boolean; approval_status?: string; created_at?: string; reviewed_at?: string | null; };
+        Update: { title?: string; proposal?: Json; evidence?: Json; risk_level?: string; baseline_score?: number | null; candidate_score?: number | null; regression_passed?: boolean; approval_status?: string; reviewed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_eval_cases: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; input: string; expected_criteria: Json; enabled: boolean; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; input: string; expected_criteria?: Json; enabled?: boolean; };
+        Update: { name?: string; input?: string; expected_criteria?: Json; enabled?: boolean; };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
     Functions: {
+      ai_runtime_model: {
+        Args: { p_business_id: string; p_agent_id: string };
+        Returns: string;
+      };
+      ai_business_snapshot: {
+        Args: { p_business_id: string; p_question?: string };
+        Returns: Json;
+      };
+      create_api_key: {
+        Args: {
+          p_business_id: string;
+          p_name: string;
+          p_scopes?: string[] | null;
+          p_expires_at?: string | null;
+        };
+        Returns: Json;
+      };
+      create_webhook: {
+        Args: {
+          p_business_id: string;
+          p_name: string;
+          p_endpoint_url: string;
+          p_events?: string[] | null;
+        };
+        Returns: Json;
+      };
+      list_webhooks: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          name: string;
+          endpoint_url: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+        }[];
+      };
+      claim_ai_embedding_chunks: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          business_id: string;
+          source_id: string;
+          content: string;
+          attempt_count: number;
+        }[];
+      };
+      finish_ai_embedding: {
+        Args: { p_chunk_id: string; p_embedding: number[]; p_model?: string };
+        Returns: boolean;
+      };
+      fail_ai_embedding: {
+        Args: { p_chunk_id: string; p_error: string };
+        Returns: boolean;
+      };
+      index_ai_knowledge_source: {
+        Args: { p_source_id: string };
+        Returns: number;
+      };
+      create_ai_action_request: {
+        Args: {
+          p_business_id: string;
+          p_action_type: string;
+          p_target_type?: string | null;
+          p_target_id?: string | null;
+          p_proposal?: Json;
+          p_reason?: string | null;
+        };
+        Returns: string;
+      };
+      set_ai_action_request_decision: {
+        Args: { p_request_id: string; p_status: string; p_reason?: string | null };
+        Returns: boolean;
+      };
       create_business_for_current_user: {
         Args: {
           p_address: string | null;
@@ -615,6 +1293,24 @@ export type Database = {
         Returns: Json;
       };
       is_business_member: { Args: { b_id: string }; Returns: boolean };
+      search_ai_knowledge_text: {
+        Args: { p_business_id: string; p_query: string; p_match_count?: number };
+        Returns: {
+          chunk_id: string;
+          source_id: string;
+          content: string;
+          metadata: Json;
+          rank: number;
+        }[];
+      };
+      execute_ai_action: {
+        Args: { p_action_id: string };
+        Returns: Json;
+      };
+      claim_automation_run: {
+        Args: { p_run_id: string };
+        Returns: Json;
+      };
       public_create_booking: {
         Args: {
           p_business_slug: string;
