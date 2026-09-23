@@ -52,11 +52,15 @@ Deno.serve(async (req: Request) => {
 
   const { data: run, error: runError } = await admin
     .from("ai_evolution_runs")
-    .insert({ status: "running", trigger: "scheduled", started_at: new Date().toISOString(), sources_scanned: 0 })
-    .select("id")
-    .single()
+    .select("id,business_id,agent_id,trigger")
+    .eq("status", "queued")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
-  if (runError) return Response.json({ error: runError.message }, { status: 500 })
+  if (runError || !run) return Response.json({ processed: 0, message: runError?.message ?? "No queued evolution run" })
+
+  await admin.from("ai_evolution_runs").update({ status: "running", started_at: new Date().toISOString() }).eq("id", run.id)
 
   let changed = 0
   let models = 0
