@@ -1069,6 +1069,36 @@ export type Database = {
         Relationships: [];
       };
     };
+      ai_agents: {
+        Row: { id: string; business_id: string; name: string; description: string | null; role: string; system_prompt: string; model: string | null; status: string; config: Json; capabilities: Json; starter_prompts: Json; created_by: string | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; name: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; created_by?: string | null; };
+        Update: { name?: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; };
+        Relationships: [];
+      };
+      ai_agent_memories: {
+        Row: { id: string; business_id: string; agent_id: string; memory_type: string; content: string; source: string; confidence: number | null; metadata: Json; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; memory_type: string; content: string; source?: string; confidence?: number | null; metadata?: Json; };
+        Update: { memory_type?: string; content?: string; source?: string; confidence?: number | null; metadata?: Json; };
+        Relationships: [];
+      };
+      ai_conversations: {
+        Row: { id: string; business_id: string; agent_id: string; user_id: string | null; title: string | null; summary: string | null; status: string; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; user_id?: string | null; title?: string | null; summary?: string | null; status?: string; };
+        Update: { title?: string | null; summary?: string | null; status?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_messages: {
+        Row: { id: string; conversation_id: string; business_id: string; role: string; content: string; citations: Json; tool_calls: Json; created_at: string; };
+        Insert: { id?: string; conversation_id: string; business_id: string; role: string; content: string; citations?: Json; tool_calls?: Json; };
+        Update: { content?: string; citations?: Json; tool_calls?: Json; };
+        Relationships: [];
+      };
+      ai_generation_jobs: {
+        Row: { id: string; business_id: string; agent_id: string | null; user_id: string | null; job_type: string; prompt: string; status: string; input: Json; output: Json; error: string | null; created_at: string; started_at: string | null; completed_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id?: string | null; user_id?: string | null; job_type: string; prompt: string; status?: string; input?: Json; output?: Json; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Update: { status?: string; output?: Json; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
