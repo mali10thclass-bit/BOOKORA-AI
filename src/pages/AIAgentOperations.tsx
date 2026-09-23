@@ -18,7 +18,10 @@ export function AIAgentOperations() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [handoffs, setHandoffs] = useState<Handoff[]>([]);
-  const [deployments, setDeployments] = useState<Deployment[]>([]);\n  const [evolutionRuns, setEvolutionRuns] = useState<EvolutionRun[]>([]);\n  const [candidates, setCandidates] = useState<Candidate[]>([]);\n  const [evolutionBusy, setEvolutionBusy] = useState(false);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [evolutionRuns, setEvolutionRuns] = useState<EvolutionRun[]>([]);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [evolutionBusy, setEvolutionBusy] = useState(false);
   const [agentId, setAgentId] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
