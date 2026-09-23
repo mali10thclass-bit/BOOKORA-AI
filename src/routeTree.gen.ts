@@ -31,6 +31,7 @@ import { Route as FormsRouteImport } from './routes/forms'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
+import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -137,6 +138,11 @@ const WaitlistRoute = WaitlistRouteImport.update({
   path: '/waitlist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SmartOperationsRoute = SmartOperationsRouteImport.update({
+  id: '/smart-operations',
+  path: '/smart-operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookSlugRoute = BookSlugRouteImport.update({
   id: '/book/$slug',
   path: '/book/$slug',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/resources': typeof ResourcesRoute
   '/reviews': typeof ReviewsRoute
   '/waitlist': typeof WaitlistRoute
+  '/smart-operations': typeof SmartOperationsRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRoutesByTo {
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/smart-operations': typeof SmartOperationsRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRoutesById {
@@ -281,6 +289,7 @@ export interface RootRouteChildren {
   ResourcesRoute: typeof ResourcesRoute
   ReviewsRoute: typeof ReviewsRoute
   WaitlistRoute: typeof WaitlistRoute
+  SmartOperationsRoute: typeof SmartOperationsRoute
   BookSlugRoute: typeof BookSlugRoute
 }
 
@@ -433,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WaitlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/smart-operations': {
+      id: '/smart-operations'
+      path: '/smart-operations'
+      fullPath: '/smart-operations'
+      preLoaderRoute: typeof SmartOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/book/$slug': {
       id: '/book/$slug'
       path: '/book/$slug'
@@ -465,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesRoute: ResourcesRoute,
   ReviewsRoute: ReviewsRoute,
   WaitlistRoute: WaitlistRoute,
+  SmartOperationsRoute: SmartOperationsRoute,
   BookSlugRoute: BookSlugRoute,
 }
 export const routeTree = rootRouteImport
