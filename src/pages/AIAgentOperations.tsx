@@ -32,6 +32,7 @@ export function AIAgentOperations() {
   const [evolutionBusy, setEvolutionBusy] = useState(false);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
   const [scheduleBusy, setScheduleBusy] = useState(false);
+  const [issuedPublicKey, setIssuedPublicKey] = useState<{ deploymentId: string; key: string } | null>(null);
 
   const load = async () => {
     if (!business) return;
@@ -39,7 +40,7 @@ export function AIAgentOperations() {
       supabase.from("ai_agents").select("id,name").eq("business_id", business.id).neq("status","archived").order("name"),
       supabase.from("ai_agent_tools").select("id,agent_id,name,tool_type,approval_required,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_agent_handoffs").select("id,agent_id,reason,status,notes").eq("business_id",business.id).order("created_at",{ascending:false}).limit(30),
-      supabase.from("ai_agent_deployments").select("id,agent_id,channel,public_key,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
+      supabase.from("ai_agent_deployments").select("id,agent_id,channel,public_key_prefix,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_evolution_runs").select("id,status,trigger,sources_scanned,models_discovered,candidates_created,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
       supabase.from("ai_improvement_candidates").select("id,title,improvement_type,risk_level,regression_passed,approval_status").eq("business_id",business.id).order("created_at",{ascending:false}).limit(20),
       supabase.from("ai_agent_eval_runs").select("id,status,case_count,passed_count,score,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
@@ -148,6 +149,24 @@ export function AIAgentOperations() {
     if (!error) await load();
   };
 
+  const rotatePublicKey = async (deploymentId: string) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("rotate_public_ai_deployment_key", { p_deployment_id: deploymentId });
+      if (error || !data) {
+        console.error("[public-ai-key]", error?.message ?? "Rotation failed");
+        return;
+      }
+      const payload = data as { deployment_id: string; public_key: string; public_key_prefix: string };
+      setIssuedPublicKey({ deploymentId: payload.deployment_id, key: payload.public_key });
+      setDeployments((items) => items.map((item) => item.id === payload.deployment_id ? { ...item, public_key: payload.public_key_prefix } : item));
+      window.prompt("Copy this new public deployment key now. The previous key is no longer valid.", payload.public_key);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const deploy = async (channel: "dashboard"|"public_web"|"embed"|"api"|"workflow") => {
     if (!business || !agentId || busy) return;
     setBusy(true);
@@ -158,8 +177,9 @@ export function AIAgentOperations() {
         });
         if (!error && data) {
           const payload = data as { deployment_id: string; public_key: string; public_key_prefix: string };
+          setIssuedPublicKey({ deploymentId: payload.deployment_id, key: payload.public_key });
           setDeployments(x => [{ id: payload.deployment_id, agent_id: agentId, channel, public_key: payload.public_key_prefix, enabled: true }, ...x]);
-          window.prompt("Copy this public deployment key now. It is only returned once.", payload.public_key);
+          window.prompt("Copy this public deployment key now. It is only returned once. BOOKORA does not store the raw key.", payload.public_key);
         }
       } else {
         const { data } = await supabase.from("ai_agent_deployments").insert({
@@ -212,7 +232,18 @@ export function AIAgentOperations() {
         <section className="card p-5 lg:col-span-2">
           <div className="flex items-center gap-2"><CalendarClock size={18}/><h2 className="font-semibold">Deployment channels</h2></div>
           <div className="mt-4 flex flex-wrap gap-2">{(["dashboard","public_web","embed","api","workflow"] as const).map(c=><button key={c} className="btn-secondary" onClick={()=>void deploy(c)} disabled={busy||!agentId}><CheckCircle2 size={14}/>{c.replace("_"," ")}</button>)}</div>
-          <div className="mt-4 grid gap-2 md:grid-cols-2">{deployments.filter(d=>d.agent_id===agentId).map(d=><div key={d.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span className="capitalize">{d.channel.replace("_"," ")}</span><span>{d.enabled?"Enabled":"Configured"}</span></div>{d.public_key&&<code className="text-[10px] text-gray-500">{d.public_key}</code>}{(d.channel==="public_web"||d.channel==="embed")&&d.public_key&&<button className="ml-2 text-xs text-primary-600" onClick={()=>navigator.clipboard?.writeText(window.location.origin+"/ai-chat/"+d.public_key)}>Copy chat URL</button>}</div>)}</div>
+          <div className="mt-4 grid gap-2 md:grid-cols-2">{deployments.filter(d=>d.agent_id===agentId).map(d=>{
+            const rawKeyAvailable = issuedPublicKey?.deploymentId === d.id;
+            const chatUrl = rawKeyAvailable ? window.location.origin + "/ai-chat/" + issuedPublicKey.key : null;
+            return <div key={d.id} className="rounded-xl border p-3 dark:border-gray-800">
+              <div className="flex justify-between text-sm"><span className="capitalize">{d.channel.replace("_"," ")}</span><span>{d.enabled?"Enabled":"Configured"}</span></div>
+              {d.public_key&&<code className="text-[10px] text-gray-500">Key prefix: {d.public_key}</code>}
+              {(d.channel==="public_web"||d.channel==="embed")&&<div className="mt-2 flex flex-wrap gap-2">
+                {chatUrl ? <button className="text-xs text-primary-600" onClick={()=>navigator.clipboard?.writeText(chatUrl)}>Copy chat URL</button> : <span className="text-xs text-gray-500">Raw key unavailable; rotate to issue a new key.</span>}
+                <button className="btn-secondary text-xs" disabled={busy} onClick={()=>void rotatePublicKey(d.id)}>Rotate key</button>
+              </div>}
+            </div>;
+          })}</div>
         </section>
       </div>
     </div>
