@@ -67,7 +67,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         ])
       : [{ data: [] as { memory_type: string; content: string; confidence: number | null }[], error: null }, { data: [] as { role: string; content: string }[], error: null }];
 
-    const [snapshotRes, knowledgeRes, agentRes] = await Promise.all([
+    const [snapshotRes, knowledgeRes, agentRes, runtimeModelRes] = await Promise.all([
       supabase.rpc("ai_business_snapshot", { p_business_id: businessId, p_question: data.question }),
       supabase.rpc("search_ai_knowledge_text", {
         p_business_id: businessId,
@@ -82,9 +82,12 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
             .eq("id", data.agentId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      data.agentId
+        ? supabase.rpc("ai_runtime_model", { p_business_id: businessId, p_agent_id: data.agentId })
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
-    const queryError = memoryRes.error ?? historyRes.error ?? snapshotRes.error ?? knowledgeRes.error ?? agentRes.error;
+    const queryError = memoryRes.error ?? historyRes.error ?? snapshotRes.error ?? knowledgeRes.error ?? agentRes.error ?? runtimeModelRes.error;
     if (queryError) {
       console.error("[assistant] data query failed", queryError.message);
       return { answer: null, error: "I could not read your business data just now." };
@@ -116,12 +119,12 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
     };
 
     const { createLovableResponsesProvider } = await import("./ai-gateway.server");
-    const lovable = createLovableResponsesProvider(apiKey);
+    const lovable = createLovableResponsesProvider(apiKey);\n    const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : "openai/gpt-6-astra";
     const language = LANGUAGE_NAMES[data.language] ?? "English";
 
     try {
       const result = streamText({
-        model: lovable.responses("openai/gpt-6-astra"),
+        model: lovable.responses(runtimeModel),
         providerOptions: {
           openai: {
             forceReasoning: true,
