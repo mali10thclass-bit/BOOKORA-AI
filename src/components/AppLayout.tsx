@@ -26,6 +26,7 @@ import {
   BrainCircuit,
   Workflow,
   Code2,
+  Gauge,
   ClipboardList,
   Gift,
 } from "lucide-react";
@@ -75,6 +76,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/staff", icon: UserCog, label: t("staff") },
         { to: "/resources", icon: Box, label: "Resources" },
         { to: "/waitlist", icon: ListPlus, label: "Waitlist" },
+        { to: "/smart-operations", icon: Gauge, label: "Smart Operations" },
         { to: "/forms", icon: ClipboardList, label: "Forms & Intake" },
         { to: "/packages", icon: Gift, label: "Packages" },
       ],
