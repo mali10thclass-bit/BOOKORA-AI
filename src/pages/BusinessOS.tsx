@@ -153,7 +153,7 @@ function AddModal({ tab, businessId, onClose, onSaved }: { tab: Tab; businessId:
     const table = tab === "crm" ? "crm_leads" : tab === "tasks" ? "business_tasks" : tab === "inventory" ? "inventory_products" : tab === "support" ? "support_tickets" : "marketing_campaigns";
     const payload =
       tab === "crm" ? { business_id: businessId, name: title, source: extra || "manual" } :
-      tab === "tasks" ? { business_id: businessId, title, priority: extra || "normal" } :
+      tab === "tasks" ? { business_id: businessId, title, priority: extra || "medium" } :
       tab === "inventory" ? { business_id: businessId, name: title, sku: extra || null } :
       tab === "support" ? { business_id: businessId, subject: title, channel: extra || "web" } :
       { business_id: businessId, name: title, channel: extra || "email" };
