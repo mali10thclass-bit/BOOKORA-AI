@@ -1,0 +1,36 @@
+name: Build BOOKORA AI Portable Agent
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop-agent/**"
+      - ".github/workflows/build-portable-agent.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-portable:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install desktop dependencies
+        working-directory: desktop-agent
+        run: npm install
+      - name: Build portable EXE
+        working-directory: desktop-agent
+        env:
+          BOOKORA_WEB_URL: ${{ vars.BOOKORA_WEB_URL }}
+        run: npm run dist:win
+      - name: Upload portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: BOOKORA-AI-Agent-Portable
+          path: desktop-agent/dist/*Portable*.exe
+          if-no-files-found: error
