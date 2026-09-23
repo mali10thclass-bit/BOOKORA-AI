@@ -10,6 +10,8 @@ create table if not exists public.ai_model_catalog (
   id uuid primary key default gen_random_uuid(),
   provider text not null,
   model_key text not null,
+  runtime_model text,
+  runtime_compatible boolean not null default false,
   display_name text not null,
   capabilities jsonb not null default '{}'::jsonb,
   context_window integer,
@@ -98,13 +100,14 @@ alter table public.ai_improvement_candidates enable row level security;
 alter table public.ai_agent_eval_cases enable row level security;
 
 grant select on public.ai_model_catalog to authenticated;
+revoke insert,update,delete on public.ai_model_catalog from authenticated;
 grant select,insert,update,delete on public.ai_trainer_sources to authenticated;
 grant select,insert,update on public.ai_evolution_runs to authenticated;
 grant select,insert,update on public.ai_improvement_candidates to authenticated;
 grant select,insert,update,delete on public.ai_agent_eval_cases to authenticated;
 
 drop policy if exists ai_trainer_sources_member on public.ai_trainer_sources;
-create policy ai_trainer_sources_member on public.ai_trainer_sources for all to authenticated using (true) with check (true);
+create policy ai_trainer_sources_read on public.ai_trainer_sources for select to authenticated using (true);
 
 drop policy if exists ai_model_catalog_read on public.ai_model_catalog;
 create policy ai_model_catalog_read on public.ai_model_catalog for select to authenticated using (true);
@@ -150,8 +153,9 @@ begin
   select coalesce(
     case when a.auto_update_enabled and coalesce(a.evolution_policy->>'auto_promote_model_updates','true')='true'
       then (
-        select m.model_key from public.ai_model_catalog m
+        select coalesce(m.runtime_model,m.model_key) from public.ai_model_catalog m
         where m.status='approved'
+          and m.runtime_compatible=true
           and (m.capabilities->>'agentic')::boolean is not false
         order by m.last_seen_at desc
         limit 1
