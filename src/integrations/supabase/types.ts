@@ -1101,6 +1101,36 @@ export type Database = {
         Update: { status?: string; output?: Json; error?: string | null; started_at?: string | null; completed_at?: string | null; };
         Relationships: [];
       };
+      ai_agent_tools: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; description: string | null; tool_type: string; config: Json; approval_required: boolean; enabled: boolean; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; description?: string | null; tool_type: string; config?: Json; approval_required?: boolean; enabled?: boolean; };
+        Update: { name?: string; description?: string | null; tool_type?: string; config?: Json; approval_required?: boolean; enabled?: boolean; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_schedules: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone: string; enabled: boolean; last_run_at: string | null; next_run_at: string | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone?: string; enabled?: boolean; last_run_at?: string | null; next_run_at?: string | null; };
+        Update: { name?: string; cron?: string; prompt?: string; timezone?: string; enabled?: boolean; last_run_at?: string | null; next_run_at?: string | null; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_handoffs: {
+        Row: { id: string; business_id: string; agent_id: string; conversation_id: string | null; reason: string; status: string; assigned_to: string | null; notes: string | null; created_at: string; resolved_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id: string; conversation_id?: string | null; reason: string; status?: string; assigned_to?: string | null; notes?: string | null; };
+        Update: { status?: string; assigned_to?: string | null; notes?: string | null; resolved_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_evaluations: {
+        Row: { id: string; business_id: string; agent_id: string; conversation_id: string | null; question: string; answer: string; grounded: boolean; support_score: number | null; citation_count: number; evaluator: string | null; feedback: string | null; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; conversation_id?: string | null; question: string; answer: string; grounded?: boolean; support_score?: number | null; citation_count?: number; evaluator?: string | null; feedback?: string | null; };
+        Update: { grounded?: boolean; support_score?: number | null; citation_count?: number; evaluator?: string | null; feedback?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_deployments: {
+        Row: { id: string; business_id: string; agent_id: string; channel: string; public_key: string | null; settings: Json; enabled: boolean; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; channel: string; public_key?: string | null; settings?: Json; enabled?: boolean; };
+        Update: { channel?: string; public_key?: string | null; settings?: Json; enabled?: boolean; updated_at?: string; };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
