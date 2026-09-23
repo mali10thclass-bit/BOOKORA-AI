@@ -20,7 +20,7 @@ export function PublicAIChat() {
     setMessages((m) => [...m, { role: "user", content: question }]);
     setBusy(true);
     try {
-      const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(//$/, "");
+      const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
       const response = await fetch(base + "/functions/v1/public-ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-bookora-public-key": publicKey },
