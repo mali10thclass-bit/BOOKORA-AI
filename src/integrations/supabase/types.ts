@@ -575,6 +575,366 @@ export type Database = {
         ];
       };
     };
+      resources: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          type: string;
+          capacity: number;
+          location_id: string|null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          type?: string;
+          capacity?: number;
+          location_id?: string|null;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          type??: string;
+          capacity??: number;
+          location_id?: string|null;
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      waitlist_entries: {
+        Row: {
+          id: string;
+          business_id: string;
+          customer_id: string;
+          service_id: string;
+          preferred_start: string|null;
+          preferred_end: string|null;
+          status: string;
+          notes: string|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          customer_id: string;
+          service_id: string;
+          preferred_start?: string|null;
+          preferred_end?: string|null;
+          status?: string;
+          notes?: string|null;
+        };
+        Update: {
+          business_id?: string;
+          customer_id?: string;
+          service_id?: string;
+          preferred_start?: string|null;
+          preferred_end?: string|null;
+          status??: string;
+          notes?: string|null;
+        };
+        Relationships: [];
+      };
+      packages: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          price: number;
+          validity_days: number|null;
+          credits: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          price?: number;
+          validity_days?: number|null;
+          credits?: number;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          price??: number;
+          validity_days?: number|null;
+          credits??: number;
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      forms: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          schema: Json;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          schema?: Json;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          schema??: Json;
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      ai_knowledge_sources: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          source_type: string;
+          content: string;
+          metadata: Json;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          source_type?: string;
+          content?: string;
+          metadata?: Json;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          source_type??: string;
+          content??: string;
+          metadata??: Json;
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      ai_training_runs: {
+        Row: {
+          id: string;
+          business_id: string;
+          prompt: string;
+          expected_answer: string|null;
+          actual_answer: string|null;
+          score: number|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          prompt: string;
+          expected_answer?: string|null;
+          actual_answer?: string|null;
+          score?: number|null;
+        };
+        Update: {
+          business_id?: string;
+          prompt?: string;
+          expected_answer?: string|null;
+          actual_answer?: string|null;
+          score?: number|null;
+        };
+        Relationships: [];
+      };
+      automation_workflows: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          description: string|null;
+          trigger_type: string;
+          definition: Json;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          description?: string|null;
+          trigger_type: string;
+          definition?: Json;
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          description?: string|null;
+          trigger_type?: string;
+          definition??: Json;
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      automation_runs: {
+        Row: {
+          id: string;
+          workflow_id: string;
+          business_id: string;
+          status: string;
+          input: Json;
+          output: Json;
+          started_at: string|null;
+          finished_at: string|null;
+          created_at: string;
+        };
+        Insert: {
+          workflow_id: string;
+          business_id: string;
+          status?: string;
+          input?: Json;
+          output?: Json;
+          started_at?: string|null;
+          finished_at?: string|null;
+        };
+        Update: {
+          workflow_id?: string;
+          business_id?: string;
+          status??: string;
+          input??: Json;
+          output??: Json;
+          started_at?: string|null;
+          finished_at?: string|null;
+        };
+        Relationships: [];
+      };
+      reviews: {
+        Row: {
+          id: string;
+          business_id: string;
+          customer_id: string|null;
+          rating: number;
+          title: string|null;
+          body: string|null;
+          source: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          customer_id?: string|null;
+          rating: number;
+          title?: string|null;
+          body?: string|null;
+          source?: string;
+          status?: string;
+        };
+        Update: {
+          business_id?: string;
+          customer_id?: string|null;
+          rating?: number;
+          title?: string|null;
+          body?: string|null;
+          source??: string;
+          status??: string;
+        };
+        Relationships: [];
+      };
+      api_keys: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scopes: string[];
+          created_by: string|null;
+          revoked_at: string|null;
+          expires_at: string|null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          key_prefix: string;
+          key_hash: string;
+          scopes?: string[];
+          created_by?: string|null;
+          revoked_at?: string|null;
+          expires_at?: string|null;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          key_prefix?: string;
+          key_hash?: string;
+          scopes?: string[];
+          created_by?: string|null;
+          revoked_at?: string|null;
+          expires_at?: string|null;
+        };
+        Relationships: [];
+      };
+      webhooks: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          endpoint_url: string;
+          secret: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          name: string;
+          endpoint_url: string;
+          secret: string;
+          events?: string[];
+          is_active?: boolean;
+        };
+        Update: {
+          business_id?: string;
+          name?: string;
+          endpoint_url?: string;
+          secret?: string;
+          events?: string[];
+          is_active??: boolean;
+        };
+        Relationships: [];
+      };
+      enterprise_audit_logs: {
+        Row: {
+          id: string;
+          business_id: string;
+          actor_user_id: string|null;
+          action: string;
+          entity_type: string|null;
+          entity_id: string|null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          actor_user_id?: string|null;
+          action: string;
+          entity_type?: string|null;
+          entity_id?: string|null;
+          metadata?: Json;
+        };
+        Update: {
+          business_id?: string;
+          actor_user_id?: string|null;
+          action?: string;
+          entity_type?: string|null;
+          entity_id?: string|null;
+          metadata??: Json;
+        };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
