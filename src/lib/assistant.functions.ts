@@ -44,10 +44,10 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       }
     ).businesses;
 
-    if (!business || !["pro", "ultimate"].includes(business.plan ?? "free")) {
+    if (!business || !["pro", "ultimate", "enterprise"].includes(business.plan ?? "free")) {
       return {
         answer: null,
-        error: "AI Assistant is available on Pro and Ultimate plans. Upgrade through billing to continue.",
+        error: "AI Assistant is available on Pro, Ultimate and Enterprise plans. Upgrade through billing to continue.",
       };
     }
 
