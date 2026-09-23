@@ -33,3 +33,86 @@ create or replace function public.record_ai_training_run(p_business_id uuid,p_pr
 revoke all on function public.record_ai_training_run(uuid,text,text,text,numeric) from public;
 grant execute on function public.record_ai_training_run(uuid,text,text,text,numeric) to authenticated;
 insert into public.ai_agent_policies(business_id,name,instructions) select b.id,'Default Business Agent','Answer from verified business knowledge and database data. Never invent availability, prices, policies, customer facts or financial values. Ask for clarification when required. Escalate sensitive or uncertain requests to a human.' from public.businesses b where not exists (select 1 from public.ai_agent_policies p where p.business_id=b.id and p.name='Default Business Agent');
+
+-- RAG foundation: chunked business knowledge with pgvector.
+create extension if not exists vector with schema extensions;
+
+create table if not exists public.ai_knowledge_chunks (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  source_id uuid not null references public.ai_knowledge_sources(id) on delete cascade,
+  chunk_index integer not null default 0,
+  content text not null,
+  metadata jsonb not null default '{}'::jsonb,
+  embedding extensions.vector(384),
+  status text not null default 'pending'
+    check (status in ('pending','indexed','failed')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(source_id, chunk_index)
+);
+
+create index if not exists ai_knowledge_chunks_business_idx
+  on public.ai_knowledge_chunks(business_id, source_id);
+create index if not exists ai_knowledge_chunks_status_idx
+  on public.ai_knowledge_chunks(status, created_at);
+
+alter table public.ai_knowledge_chunks enable row level security;
+
+drop policy if exists ai_knowledge_chunks_select_member on public.ai_knowledge_chunks;
+create policy ai_knowledge_chunks_select_member
+on public.ai_knowledge_chunks for select to authenticated
+using (public.is_business_member(business_id));
+
+drop policy if exists ai_knowledge_chunks_insert_member on public.ai_knowledge_chunks;
+create policy ai_knowledge_chunks_insert_member
+on public.ai_knowledge_chunks for insert to authenticated
+with check (public.is_business_member(business_id));
+
+drop policy if exists ai_knowledge_chunks_update_member on public.ai_knowledge_chunks;
+create policy ai_knowledge_chunks_update_member
+on public.ai_knowledge_chunks for update to authenticated
+using (public.is_business_member(business_id))
+with check (public.is_business_member(business_id));
+
+drop policy if exists ai_knowledge_chunks_delete_member on public.ai_knowledge_chunks;
+create policy ai_knowledge_chunks_delete_member
+on public.ai_knowledge_chunks for delete to authenticated
+using (public.is_business_member(business_id));
+
+create or replace function public.search_ai_knowledge(
+  p_business_id uuid,
+  p_query_embedding extensions.vector(384),
+  p_match_threshold real default 0.70,
+  p_match_count integer default 8
+)
+returns table (
+  chunk_id uuid,
+  source_id uuid,
+  content text,
+  metadata jsonb,
+  similarity real
+)
+language sql
+stable
+security invoker
+set search_path = public, extensions
+as $$
+  select
+    c.id,
+    c.source_id,
+    c.content,
+    c.metadata,
+    (1 - (c.embedding <=> p_query_embedding))::real as similarity
+  from public.ai_knowledge_chunks c
+  where c.business_id = p_business_id
+    and c.status = 'indexed'
+    and c.embedding is not null
+    and public.is_business_member(c.business_id)
+    and (1 - (c.embedding <=> p_query_embedding)) >= greatest(0, least(1, p_match_threshold))
+  order by c.embedding <=> p_query_embedding
+  limit greatest(1, least(50, p_match_count));
+$$;
+
+revoke all on function public.search_ai_knowledge(uuid,extensions.vector(384),real,integer) from public;
+grant execute on function public.search_ai_knowledge(uuid,extensions.vector(384),real,integer) to authenticated;
