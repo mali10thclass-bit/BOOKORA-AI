@@ -29,6 +29,7 @@ export function AITrainer() {
   const [testPrompt, setTestPrompt] = useState("");
   const [testAnswer, setTestAnswer] = useState("");
   const [testing, setTesting] = useState(false);
+  const [indexingId, setIndexingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!business) return;
@@ -47,7 +48,7 @@ export function AITrainer() {
   const addSource = async () => {
     if (!business || !name.trim() || (!content.trim() && !url.trim())) return;
     setSaving(true);
-    const { error } = await supabase.from("ai_knowledge_sources").insert({
+    const { data: inserted, error } = await supabase.from("ai_knowledge_sources").insert({
       business_id: business.id,
       name: name.trim(),
       source_type: type,
@@ -55,7 +56,8 @@ export function AITrainer() {
       metadata: url.trim() ? { url: url.trim(), ingestion: "pending" } : { ingestion: "manual" },
       is_active: true,
     });
-    if (!error) {
+    if (!error && inserted?.id) {
+      await supabase.rpc("index_ai_knowledge_source", { p_source_id: inserted.id });
       setName(""); setUrl(""); setContent("");
       await load();
     }
@@ -125,6 +127,18 @@ export function AITrainer() {
                       <p className="font-medium">{source.name}</p>
                       <p className="mt-1 text-xs text-gray-500">{source.source_type} · {source.is_active ? "active" : "disabled"}</p>
                       <p className="mt-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">{source.content}</p>
+                      <button
+                        className="mt-3 btn-secondary"
+                        disabled={indexingId === source.id}
+                        onClick={() => void (async () => {
+                          setIndexingId(source.id);
+                          await supabase.rpc("index_ai_knowledge_source", { p_source_id: source.id });
+                          setIndexingId(null);
+                        })()}
+                      >
+                        <RefreshCw size={14} className={indexingId === source.id ? "animate-spin" : ""} />
+                        {indexingId === source.id ? "Queueing..." : "Index for AI"}
+                      </button>
                     </div>
                     <button className="icon-button text-error-600" title="Delete source" onClick={() => void remove(source.id)}><Trash2 size={16} /></button>
                   </div>
