@@ -31,7 +31,8 @@ import { Route as FormsRouteImport } from './routes/forms'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
-import { Route as SmartOperationsRouteImport } from './routes/smart-operations'\nimport { Route as BusinessOsRouteImport } from './routes/business-os'
+import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
+import { Route as BusinessOsRouteImport } from './routes/business-os'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -143,6 +144,11 @@ const SmartOperationsRoute = SmartOperationsRouteImport.update({
   path: '/smart-operations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessOsRoute = BusinessOsRouteImport.update({
+  id: '/business-os',
+  path: '/business-os',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookSlugRoute = BookSlugRouteImport.update({
   id: '/book/$slug',
   path: '/book/$slug',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/reviews': typeof ReviewsRoute
   '/waitlist': typeof WaitlistRoute
   '/smart-operations': typeof SmartOperationsRoute
+  '/business-os': typeof BusinessOsRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRoutesByTo {
@@ -290,6 +297,7 @@ export interface RootRouteChildren {
   ReviewsRoute: typeof ReviewsRoute
   WaitlistRoute: typeof WaitlistRoute
   SmartOperationsRoute: typeof SmartOperationsRoute
+  BusinessOsRoute: typeof BusinessOsRoute
   BookSlugRoute: typeof BookSlugRoute
 }
 
@@ -449,7 +457,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SmartOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/book/$slug': {
+    '/business-os': {
+      id: '/business-os'
+      path: '/business-os'
+      fullPath: '/business-os'
+      preLoaderRoute: typeof BusinessOsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/book/$slug':
       id: '/book/$slug'
       path: '/book/$slug'
       fullPath: '/book/$slug'
@@ -482,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReviewsRoute: ReviewsRoute,
   WaitlistRoute: WaitlistRoute,
   SmartOperationsRoute: SmartOperationsRoute,
+  BusinessOsRoute: BusinessOsRoute,
   BookSlugRoute: BookSlugRoute,
 }
 export const routeTree = rootRouteImport
