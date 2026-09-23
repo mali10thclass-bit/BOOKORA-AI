@@ -937,6 +937,98 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_knowledge_chunks: {
+        Row: {
+          id: string;
+          business_id: string;
+          source_id: string;
+          chunk_index: number;
+          content: string;
+          metadata: Json;
+          embedding: number[] | null;
+          status: string;
+          attempt_count: number;
+          last_error: string | null;
+          embedding_model: string | null;
+          embedded_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          source_id: string;
+          chunk_index?: number;
+          content: string;
+          metadata?: Json;
+          embedding?: number[] | null;
+          status?: string;
+          attempt_count?: number;
+          last_error?: string | null;
+          embedding_model?: string | null;
+          embedded_at?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          source_id?: string;
+          chunk_index?: number;
+          content?: string;
+          metadata?: Json;
+          embedding?: number[] | null;
+          status?: string;
+          attempt_count?: number;
+          last_error?: string | null;
+          embedding_model?: string | null;
+          embedded_at?: string | null;
+        };
+        Relationships: [];
+      };
+      ai_action_requests: {
+        Row: {
+          id: string;
+          business_id: string;
+          actor_user_id: string | null;
+          action_type: string;
+          target_type: string | null;
+          target_id: string | null;
+          proposal: Json;
+          status: string;
+          reason: string | null;
+          approved_at: string | null;
+          approved_by: string | null;
+          executed_at: string | null;
+          executed_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          business_id: string;
+          actor_user_id?: string | null;
+          action_type: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          proposal?: Json;
+          status?: string;
+          reason?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+        };
+        Update: {
+          business_id?: string;
+          actor_user_id?: string | null;
+          action_type?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          proposal?: Json;
+          status?: string;
+          reason?: string | null;
+          approved_at?: string | null;
+          approved_by?: string | null;
+          executed_at?: string | null;
+          executed_by?: string | null;
+        };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
@@ -969,6 +1061,43 @@ export type Database = {
           is_active: boolean;
           created_at: string;
         }[];
+      };
+      claim_ai_embedding_chunks: {
+        Args: { p_limit?: number };
+        Returns: {
+          id: string;
+          business_id: string;
+          source_id: string;
+          content: string;
+          attempt_count: number;
+        }[];
+      };
+      finish_ai_embedding: {
+        Args: { p_chunk_id: string; p_embedding: number[]; p_model?: string };
+        Returns: boolean;
+      };
+      fail_ai_embedding: {
+        Args: { p_chunk_id: string; p_error: string };
+        Returns: boolean;
+      };
+      index_ai_knowledge_source: {
+        Args: { p_source_id: string };
+        Returns: number;
+      };
+      create_ai_action_request: {
+        Args: {
+          p_business_id: string;
+          p_action_type: string;
+          p_target_type?: string | null;
+          p_target_id?: string | null;
+          p_proposal?: Json;
+          p_reason?: string | null;
+        };
+        Returns: string;
+      };
+      set_ai_action_request_decision: {
+        Args: { p_request_id: string; p_status: string; p_reason?: string | null };
+        Returns: boolean;
       };
       create_business_for_current_user: {
         Args: {
