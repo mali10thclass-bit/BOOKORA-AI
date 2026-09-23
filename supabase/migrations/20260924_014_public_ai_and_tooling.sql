@@ -71,6 +71,7 @@ declare
   deployment_id uuid;
 begin
   if not public.is_business_member(p_business_id) then raise exception 'not authorized'; end if;
+  if not public.bookora_plan_allows_feature(p_business_id,'public_ai_chat') then raise exception 'Public AI Chat requires Ultimate or Enterprise'; end if;
   if p_channel not in ('public_web','embed') then raise exception 'invalid public channel'; end if;
   if not exists (select 1 from public.ai_agents where id=p_agent_id and business_id=p_business_id and status='active') then
     raise exception 'agent not found';
