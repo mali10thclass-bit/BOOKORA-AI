@@ -290,3 +290,50 @@ as $$
 $$;
 revoke all on function public.search_ai_knowledge_text(uuid,text,integer) from public;
 grant execute on function public.search_ai_knowledge_text(uuid,text,integer) to authenticated;
+
+-- 8) Deterministic server-side chunking for knowledge ingestion.
+create or replace function public.index_ai_knowledge_source(p_source_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  s public.ai_knowledge_sources;
+  v_count integer := 0;
+  v_text text;
+  v_chunk_size constant integer := 1200;
+  v_chunks integer;
+  i integer;
+begin
+  select * into s from public.ai_knowledge_sources where id=p_source_id for update;
+  if not found then raise exception 'Knowledge source not found'; end if;
+  if not public.is_business_member(s.business_id) then raise exception 'Not authorized'; end if;
+
+  delete from public.ai_knowledge_chunks where source_id=p_source_id;
+
+  v_text := btrim(coalesce(s.content,''));
+  if v_text = '' then return 0; end if;
+
+  v_chunks := ceil(length(v_text)::numeric / v_chunk_size)::integer;
+  for i in 0..(v_chunks-1) loop
+    insert into public.ai_knowledge_chunks(
+      business_id,source_id,chunk_index,content,metadata,status
+    ) values(
+      s.business_id,p_source_id,i,
+      substr(v_text,(i*v_chunk_size)+1,v_chunk_size),
+      jsonb_build_object('source_name',s.name,'source_type',s.source_type),
+      'indexed'
+    );
+    v_count := v_count + 1;
+  end loop;
+  return v_count;
+exception when others then
+  update public.ai_knowledge_chunks
+  set status='failed', updated_at=now()
+  where source_id=p_source_id;
+  raise;
+end;
+$$;
+revoke all on function public.index_ai_knowledge_source(uuid) from public, anon;
+grant execute on function public.index_ai_knowledge_source(uuid) to authenticated;
