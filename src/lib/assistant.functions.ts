@@ -175,3 +175,110 @@ Question: ${data.question}`,
       return { answer: null, error: "The assistant could not answer right now." };
     }
   });
+
+
+const EvalCriteria = z.object({
+  contains_any: z.array(z.string()).optional(),
+  contains_all: z.array(z.string()).optional(),
+  exact: z.string().optional(),
+  regex: z.string().optional(),
+  max_length: z.number().int().positive().optional(),
+  must_not_contain: z.array(z.string()).optional(),
+}).passthrough();
+
+export const runAgentEvaluation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ agentId: z.string().uuid(), runId: z.string().uuid() }).parse(input)
+  )
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    const { data: member } = await supabase
+      .from("business_members")
+      .select("business_id, businesses(name, currency, timezone, plan)")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!member?.business_id) return { error: "No business found for your account." };
+
+    const businessId = member.business_id;
+    const business = (member as unknown as { businesses: { name:string; currency:string|null; timezone:string|null; plan:string|null } | null }).businesses;
+    if (!business || !["pro","ultimate","enterprise"].includes(business.plan ?? "free")) {
+      return { error: "Agent evaluation requires a Pro, Ultimate or Enterprise plan." };
+    }
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) return { error: "AI is not configured for this project yet." };
+
+    const { data: agent } = await supabase
+      .from("ai_agents")
+      .select("id,name,system_prompt,model,capabilities,config")
+      .eq("business_id", businessId)
+      .eq("id", data.agentId)
+      .maybeSingle();
+    if (!agent) return { error: "Agent not found." };
+
+    const { data: cases, error: caseError } = await supabase
+      .from("ai_agent_eval_cases")
+      .select("id,input,expected_criteria")
+      .eq("business_id", businessId)
+      .eq("agent_id", data.agentId)
+      .eq("enabled", true)
+      .order("created_at", { ascending: true });
+    if (caseError) return { error: "Could not load evaluation cases." };
+
+    await supabase.from("ai_agent_eval_runs").update({ status:"running" }).eq("id", data.runId).eq("business_id", businessId);
+
+    const { createLovableResponsesProvider } = await import("./ai-gateway.server");
+    const lovable = createLovableResponsesProvider(apiKey);
+    const results: Array<{caseId:string; input:string; output:string; passed:boolean; score:number; feedback:string}> = [];
+
+    for (const testCase of cases ?? []) {
+      try {
+        const result = streamText({
+          model: lovable.responses(agent.model || "openai/gpt-4o-mini"),
+          providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false } },
+          system: [
+            "You are being evaluated as a BOOKORA AI business agent.",
+            "Use only the supplied business context and agent instructions. Do not invent business facts.",
+            agent.system_prompt ?? "",
+          ].join("\n"),
+          messages: [{ role:"user", content: `Business: ${business.name}\nQuestion: ${testCase.input}` }],
+        });
+        const output = (await result.text).trim();
+        const criteria = EvalCriteria.safeParse(testCase.expected_criteria);
+        let checks = 0;
+        let passedChecks = 0;
+        const feedback: string[] = [];
+        if (criteria.success) {
+          const c = criteria.data;
+          if (c.exact !== undefined) { checks++; if (output.trim() === c.exact.trim()) passedChecks++; else feedback.push("exact mismatch"); }
+          if (c.contains_any?.length) { checks++; if (c.contains_any.some(x=>output.toLowerCase().includes(x.toLowerCase()))) passedChecks++; else feedback.push("none of contains_any matched"); }
+          if (c.contains_all?.length) { checks++; const ok=c.contains_all.every(x=>output.toLowerCase().includes(x.toLowerCase())); if(ok) passedChecks++; else feedback.push("contains_all failed"); }
+          if (c.regex) { checks++; try { if(new RegExp(c.regex,"i").test(output)) passedChecks++; else feedback.push("regex failed"); } catch { feedback.push("invalid regex criterion"); } }
+          if (c.max_length !== undefined) { checks++; if(output.length<=c.max_length) passedChecks++; else feedback.push("max_length failed"); }
+          if (c.must_not_contain?.length) { checks++; if(!c.must_not_contain.some(x=>output.toLowerCase().includes(x.toLowerCase()))) passedChecks++; else feedback.push("must_not_contain failed"); }
+        } else {
+          feedback.push("No valid deterministic criteria supplied");
+        }
+        const score = checks ? passedChecks / checks : 0;
+        results.push({caseId:testCase.id,input:testCase.input,output,passed:checks>0 && score===1,score,feedback:feedback.join("; ") || "passed"});
+      } catch (error) {
+        results.push({caseId:testCase.id,input:testCase.input,output:"",passed:false,score:0,feedback:error instanceof Error?error.message:String(error)});
+      }
+    }
+
+    for (const r of results) {
+      await supabase.from("ai_agent_eval_results").insert({
+        run_id:data.runId,business_id:businessId,agent_id:data.agentId,case_id:r.caseId,
+        input:r.input,output:r.output,passed:r.passed,score:r.score,feedback:r.feedback,
+      });
+    }
+    const score = results.length ? results.reduce((s,r)=>s+r.score,0)/results.length : 0;
+    const passed = results.filter(r=>r.passed).length;
+    await supabase.from("ai_agent_eval_runs").update({
+      status:"completed",case_count:results.length,passed_count:passed,score,
+      summary:`Evaluated ${results.length} cases; ${passed} fully passed; deterministic score ${score.toFixed(4)}.`,
+      completed_at:new Date().toISOString(),
+    }).eq("id",data.runId).eq("business_id",businessId);
+
+    return { runId:data.runId, caseCount:results.length, passedCount:passed, score };
+  });
