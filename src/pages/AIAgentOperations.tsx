@@ -181,7 +181,7 @@ export function AIAgentOperations() {
     if (busy) return;
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("rollback_ai_agent_version", { p_version_id: versionId });
+      const { error } = await supabase.rpc("rollback_ai_agent_version", { p_agent_id: agentId, p_version_id: versionId });
       if (error) console.error("[agent-version]", error.message);
       await load();
     } finally { setBusy(false); }
@@ -204,7 +204,7 @@ export function AIAgentOperations() {
       }
       const payload = data as { deployment_id: string; public_key: string; public_key_prefix: string };
       setIssuedPublicKey({ deploymentId: payload.deployment_id, key: payload.public_key });
-      setDeployments((items) => items.map((item) => item.id === payload.deployment_id ? { ...item, public_key: payload.public_key_prefix } : item));
+      setDeployments((items) => items.map((item) => item.id === payload.deployment_id ? { ...item, public_key_prefix: payload.public_key_prefix } : item));
       window.prompt("Copy this new public deployment key now. The previous key is no longer valid.", payload.public_key);
     } finally {
       setBusy(false);
@@ -222,13 +222,13 @@ export function AIAgentOperations() {
         if (!error && data) {
           const payload = data as { deployment_id: string; public_key: string; public_key_prefix: string };
           setIssuedPublicKey({ deploymentId: payload.deployment_id, key: payload.public_key });
-          setDeployments(x => [{ id: payload.deployment_id, agent_id: agentId, channel, public_key: payload.public_key_prefix, enabled: true }, ...x]);
+          setDeployments(x => [{ id: payload.deployment_id, agent_id: agentId, channel, public_key_prefix: payload.public_key_prefix, enabled: true }, ...x]);
           window.prompt("Copy this public deployment key now. It is only returned once. BOOKORA does not store the raw key.", payload.public_key);
         }
       } else {
         const { data } = await supabase.from("ai_agent_deployments").insert({
           business_id: business.id, agent_id: agentId, channel, enabled: channel === "dashboard", settings: {},
-        }).select("id,agent_id,channel,public_key,enabled").single();
+        }).select("id,agent_id,channel,public_key_prefix,enabled").single();
         if (data) setDeployments(x=>[data as Deployment,...x]);
       }
       await load();
@@ -296,7 +296,7 @@ export function AIAgentOperations() {
             const chatUrl = rawKeyAvailable ? window.location.origin + "/ai-chat/" + issuedPublicKey.key : null;
             return <div key={d.id} className="rounded-xl border p-3 dark:border-gray-800">
               <div className="flex justify-between text-sm"><span className="capitalize">{d.channel.replace("_"," ")}</span><span>{d.enabled?"Enabled":"Configured"}</span></div>
-              {d.public_key&&<code className="text-[10px] text-gray-500">Key prefix: {d.public_key}</code>}
+              {d.public_key_prefix&&<code className="text-[10px] text-gray-500">Key prefix: {d.public_key_prefix}</code>}
               {(d.channel==="public_web"||d.channel==="embed")&&<div className="mt-2 flex flex-wrap gap-2">
                 {chatUrl ? <button className="text-xs text-primary-600" onClick={()=>navigator.clipboard?.writeText(chatUrl)}>Copy chat URL</button> : <span className="text-xs text-gray-500">Raw key unavailable; rotate to issue a new key.</span>}
                 <button className="btn-secondary text-xs" disabled={busy} onClick={()=>void rotatePublicKey(d.id)}>Rotate key</button>
