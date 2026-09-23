@@ -76,7 +76,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/staff", icon: UserCog, label: t("staff") },
         { to: "/resources", icon: Box, label: "Resources" },
         { to: "/waitlist", icon: ListPlus, label: "Waitlist" },
-        { to: "/smart-operations", icon: Gauge, label: "Smart Operations" },
+        { to: "/smart-operations", icon: Gauge, label: "Smart Operations" },\n        { to: "/business-os", icon: BriefcaseBusiness, label: "Business OS" },
         { to: "/forms", icon: ClipboardList, label: "Forms & Intake" },
         { to: "/packages", icon: Gift, label: "Packages" },
       ],
