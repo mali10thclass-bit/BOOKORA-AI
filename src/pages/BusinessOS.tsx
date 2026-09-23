@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
@@ -9,6 +10,8 @@ import {
 
 type Tab = "crm" | "tasks" | "inventory" | "support" | "growth";
 type Row = Record<string, unknown>;
+type TableName = "crm_leads" | "business_tasks" | "inventory_products" | "support_tickets" | "marketing_campaigns";
+type InsertPayload = { [K in TableName]: Database["public"]["Tables"][K]["Insert"] }[TableName];
 
 const tabs: { id: Tab; label: string; icon: typeof Users; description: string }[] = [
   { id: "crm", label: "CRM", icon: Users, description: "Leads, deals and customer follow-up" },
@@ -150,14 +153,14 @@ function AddModal({ tab, businessId, onClose, onSaved }: { tab: Tab; businessId:
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError(null);
-    const table = tab === "crm" ? "crm_leads" : tab === "tasks" ? "business_tasks" : tab === "inventory" ? "inventory_products" : tab === "support" ? "support_tickets" : "marketing_campaigns";
+    const table: TableName = tab === "crm" ? "crm_leads" : tab === "tasks" ? "business_tasks" : tab === "inventory" ? "inventory_products" : tab === "support" ? "support_tickets" : "marketing_campaigns";
     const payload =
       tab === "crm" ? { business_id: businessId, name: title, source: extra || "manual" } :
       tab === "tasks" ? { business_id: businessId, title, priority: extra || "medium" } :
       tab === "inventory" ? { business_id: businessId, name: title, sku: extra || null } :
       tab === "support" ? { business_id: businessId, subject: title, channel: extra || "web" } :
       { business_id: businessId, name: title, channel: extra || "email" };
-    const { error: e2 } = await supabase.from(table).insert(payload);
+    const { error: e2 } = await supabase.from(table).insert(payload as never);
     if (e2) { setError(e2.message); setSaving(false); return; }
     onSaved();
   };
