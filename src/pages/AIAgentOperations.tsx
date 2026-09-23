@@ -10,11 +10,11 @@ import { runAgentEvaluation } from "@/lib/assistant.functions";
 type Agent = { id: string; name: string };
 type Tool = { id: string; agent_id: string; name: string; tool_type: string; approval_required: boolean; enabled: boolean };
 type Handoff = { id: string; agent_id: string; reason: string; status: string; notes: string | null };
-type Deployment = { id: string; agent_id: string; channel: string; public_key: string | null; enabled: boolean };
+type Deployment = { id: string; agent_id: string; channel: string; public_key_prefix?: string | null; enabled: boolean };
 type EvolutionRun = { id: string; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; created_at: string };
 type Candidate = { id: string; title: string; improvement_type: string; risk_level: string; regression_passed: boolean; approval_status: string };
 type EvalRun = { id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; created_at: string };
-type AgentVersion = { id: string; version_number: number; reason: string; model: string | null; created_at: string };
+type AgentVersion = { id: string; agent_id: string; version_number: number; label: string; source: string; model: string | null; created_at: string };
 
 export function AIAgentOperations() {
   const { business, membership } = useAuth();
@@ -47,7 +47,7 @@ export function AIAgentOperations() {
       supabase.from("ai_evolution_runs").select("id,status,trigger,sources_scanned,models_discovered,candidates_created,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
       supabase.from("ai_improvement_candidates").select("id,title,improvement_type,risk_level,regression_passed,approval_status").eq("business_id",business.id).order("created_at",{ascending:false}).limit(20),
       supabase.from("ai_agent_eval_runs").select("id,status,case_count,passed_count,score,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
-      supabase.from("ai_agent_versions").select("id,version_number,reason,model,created_at").eq("business_id",business.id).order("version_number",{ascending:false}).limit(20),
+      supabase.from("ai_agent_versions").select("id,agent_id,version_number,label,source,model,created_at").eq("business_id",business.id).order("version_number",{ascending:false}).limit(20),
     ]);
     setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]);
     setDeployments((d.data??[]) as Deployment[]); setEvolutionRuns((e.data??[]) as EvolutionRun[]);
