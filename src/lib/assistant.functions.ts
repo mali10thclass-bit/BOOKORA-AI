@@ -58,7 +58,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
 
     const businessId = member.business_id;
 
-    const [bookingsRes, servicesRes, staffRes, customersRes] = await Promise.all([
+    const [bookingsRes, servicesRes, staffRes, customersRes, knowledgeRes] = await Promise.all([
       supabase
         .from("bookings")
         .select(
@@ -78,10 +78,15 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         .eq("business_id", businessId)
         .limit(200),
       supabase.from("customers").select("id").eq("business_id", businessId).limit(2000),
+      supabase.rpc("search_ai_knowledge_text", {
+        p_business_id: businessId,
+        p_query: data.question,
+        p_match_count: 8,
+      }),
     ]);
 
     const queryError =
-      bookingsRes.error ?? servicesRes.error ?? staffRes.error ?? customersRes.error;
+      bookingsRes.error ?? servicesRes.error ?? staffRes.error ?? customersRes.error ?? knowledgeRes.error;
     if (queryError) {
       console.error("[assistant] data query failed", queryError.message);
       return { answer: null, error: "I could not read your business data just now." };
@@ -91,6 +96,12 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
     const services = servicesRes.data;
     const staff = staffRes.data;
     const customers = customersRes.data;
+    const knowledge = (knowledgeRes.data ?? []).map((item) => ({
+      sourceId: item.source_id,
+      content: item.content,
+      rank: Number(item.rank ?? 0),
+      metadata: item.metadata,
+    }));
 
     const rows = bookings ?? [];
     const paid = rows.filter((b) => b.payment_status === "paid");
@@ -124,6 +135,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       },
       services: services ?? [],
       staff: staff ?? [],
+      knowledge: knowledge.slice(0, 8),
       recentBookings: rows.slice(0, 120).map((b) => ({
         start: b.start_time,
         status: b.status,
@@ -152,8 +164,8 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         },
         system: [
           "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
-          "Answer strictly from the JSON business snapshot given by the user message.",
-          "Never invent numbers. If the snapshot does not contain the answer, say so plainly.",
+          "Answer strictly from the JSON business snapshot and retrieved business knowledge given in the user message.",
+          "Never invent numbers or policies. If the provided snapshot/knowledge does not contain the answer, say so plainly.",
           "Be concise: short paragraphs or small bullet lists, with concrete numbers and the business currency.",
           `Reply only in ${language}.`,
         ].join(" "),
