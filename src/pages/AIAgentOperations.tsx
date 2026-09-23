@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Bot, CalendarClock, CheckCircle2, Hand, Plus, ShieldCheck, Wrench } from "lucide-react";
+import { CalendarClock, CheckCircle2, Hand, Plus, ShieldCheck, Wrench, FlaskConical, Rocket } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
 import { Protected } from "@/components/Protected";
+import { runAgentEvaluation } from "@/lib/assistant.functions";
 
 type Agent = { id: string; name: string };
 type Tool = { id: string; agent_id: string; name: string; tool_type: string; approval_required: boolean; enabled: boolean };
@@ -12,6 +13,7 @@ type Handoff = { id: string; agent_id: string; reason: string; status: string; n
 type Deployment = { id: string; agent_id: string; channel: string; public_key: string | null; enabled: boolean };
 type EvolutionRun = { id: string; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; created_at: string };
 type Candidate = { id: string; title: string; improvement_type: string; risk_level: string; regression_passed: boolean; approval_status: string };
+type EvalRun = { id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; created_at: string };
 
 export function AIAgentOperations() {
   const { business, membership } = useAuth();
@@ -21,22 +23,29 @@ export function AIAgentOperations() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [evolutionRuns, setEvolutionRuns] = useState<EvolutionRun[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [evolutionBusy, setEvolutionBusy] = useState(false);
+  const [evalRuns, setEvalRuns] = useState<EvalRun[]>([]);
   const [agentId, setAgentId] = useState("");
   const [name, setName] = useState("");
+  const [evalInput, setEvalInput] = useState("");
+  const [evalExpected, setEvalExpected] = useState("");
   const [busy, setBusy] = useState(false);
+  const [evolutionBusy, setEvolutionBusy] = useState(false);
+  const [evaluationBusy, setEvaluationBusy] = useState(false);
 
   const load = async () => {
     if (!business) return;
-    const [a,t,h,d] = await Promise.all([
+    const [a,t,h,d,e,c,er] = await Promise.all([
       supabase.from("ai_agents").select("id,name").eq("business_id", business.id).neq("status","archived").order("name"),
       supabase.from("ai_agent_tools").select("id,agent_id,name,tool_type,approval_required,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_agent_handoffs").select("id,agent_id,reason,status,notes").eq("business_id",business.id).order("created_at",{ascending:false}).limit(30),
       supabase.from("ai_agent_deployments").select("id,agent_id,channel,public_key,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_evolution_runs").select("id,status,trigger,sources_scanned,models_discovered,candidates_created,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
       supabase.from("ai_improvement_candidates").select("id,title,improvement_type,risk_level,regression_passed,approval_status").eq("business_id",business.id).order("created_at",{ascending:false}).limit(20),
+      supabase.from("ai_agent_eval_runs").select("id,status,case_count,passed_count,score,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
     ]);
-    setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]); setDeployments((d.data??[]) as Deployment[]); setEvolutionRuns((e.data??[]) as EvolutionRun[]); setCandidates((c.data??[]) as Candidate[]);
+    setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]);
+    setDeployments((d.data??[]) as Deployment[]); setEvolutionRuns((e.data??[]) as EvolutionRun[]);
+    setCandidates((c.data??[]) as Candidate[]); setEvalRuns((er.data??[]) as EvalRun[]);
     if (!agentId && a.data?.[0]) setAgentId(a.data[0].id);
   };
   useEffect(()=>{ void load(); },[business]);
@@ -64,23 +73,45 @@ export function AIAgentOperations() {
   };
 
   const runEvolution = async () => {
-    if (evolutionBusy) return;
+    if (!business || evolutionBusy) return;
     setEvolutionBusy(true);
     try {
-      if (!business) return;
-      await supabase.from("ai_evolution_runs").insert({
-        business_id: business.id,
-        agent_id: agentId || null,
-        status: "queued",
-        trigger: "manual",
-      });
+      await supabase.from("ai_evolution_runs").insert({ business_id: business.id, agent_id: agentId || null, status:"queued", trigger:"manual" });
       await load();
     } finally { setEvolutionBusy(false); }
+  };
+
+  const addEvalCase = async () => {
+    if (!business || !agentId || !evalInput.trim() || !evalExpected.trim()) return;
+    await supabase.from("ai_agent_eval_cases").insert({
+      business_id: business.id, agent_id: agentId, name: "Manual evaluation case",
+      input: evalInput.trim(), expected_criteria: { contains_any: [evalExpected.trim()] }, enabled: true,
+    });
+    setEvalInput(""); setEvalExpected("");
+  };
+
+  const runEvaluation = async () => {
+    if (!business || !agentId || evaluationBusy) return;
+    setEvaluationBusy(true);
+    try {
+      const { data: run, error } = await supabase.from("ai_agent_eval_runs").insert({
+        business_id: business.id, agent_id: agentId, status:"queued",
+      }).select("id").single();
+      if (error || !run) return;
+      await runAgentEvaluation({ data: { agentId, runId: run.id } });
+      await load();
+    } finally { setEvaluationBusy(false); }
   };
 
   const reviewCandidate = async (id: string, status: "approved"|"rejected") => {
     await supabase.from("ai_improvement_candidates").update({ approval_status: status, reviewed_at: new Date().toISOString() }).eq("id", id).eq("business_id", business?.id ?? "");
     await load();
+  };
+
+  const promoteCandidate = async (id: string) => {
+    if (!business) return;
+    const { error } = await supabase.rpc("promote_ai_improvement_candidate", { p_candidate_id:id });
+    if (!error) await load();
   };
 
   const deploy = async (channel: "dashboard"|"public_web"|"embed"|"api"|"workflow") => {
@@ -96,7 +127,7 @@ export function AIAgentOperations() {
   return <PlanGate minimumPlan="pro" featureName="AI Agent Operations">
     <div className="mx-auto max-w-7xl space-y-5">
       <section className="card p-6">
-        <div className="flex items-center gap-3"><ShieldCheck className="text-primary-600"/><div><h1 className="text-2xl font-bold">AI Agent Operations</h1><p className="text-sm text-gray-500">Tools, approvals, human handoff and deployment controls for production agents.</p></div></div>
+        <div className="flex items-center gap-3"><ShieldCheck className="text-primary-600"/><div><h1 className="text-2xl font-bold">AI Agent Operations</h1><p className="text-sm text-gray-500">Tools, approvals, evaluation, human handoff and deployment controls for production agents.</p></div></div>
       </section>
       <section className="card p-5">
         <label className="text-sm font-medium">Active agent</label>
@@ -114,6 +145,21 @@ export function AIAgentOperations() {
           <p className="mt-1 text-xs text-gray-500">Create a review queue item when an agent needs a person.</p>
           <button className="btn-primary mt-4" onClick={()=>void createHandoff()} disabled={busy||!agentId}><Hand size={15}/>Request human review</button>
           <div className="mt-4 space-y-2">{handoffs.filter(h=>h.agent_id===agentId).slice(0,8).map(h=><div key={h.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span>{h.reason}</span><span className="capitalize text-gray-500">{h.status}</span></div></div>)}</div>
+        </section>
+        <section className="card p-5 lg:col-span-2">
+          <div className="flex items-center gap-2"><FlaskConical size={18}/><h2 className="font-semibold">Agent evaluation</h2></div>
+          <p className="mt-1 text-xs text-gray-500">Deterministic criteria only: results are evidence for regression decisions, not proof of general AI quality.</p>
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
+            <input className="input" value={evalInput} onChange={e=>setEvalInput(e.target.value)} placeholder="Test question"/>
+            <input className="input" value={evalExpected} onChange={e=>setEvalExpected(e.target.value)} placeholder="Expected phrase"/>
+          </div>
+          <div className="mt-3 flex gap-2"><button className="btn-secondary" onClick={()=>void addEvalCase()} disabled={!evalInput.trim()||!evalExpected.trim()}><Plus size={14}/>Add case</button><button className="btn-primary" onClick={()=>void runEvaluation()} disabled={evaluationBusy||!agentId}><FlaskConical size={14}/>{evaluationBusy?"Running...":"Run evaluation"}</button></div>
+          <div className="mt-4 space-y-2">{evalRuns.filter(r=>r.status==="completed").slice(0,5).map(r=><div key={r.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span>{r.passed_count}/{r.case_count} passed</span><span>{r.score===null?"—":Number(r.score).toFixed(2)}</span></div><p className="mt-1 text-xs text-gray-500">{r.summary}</p></div>)}</div>
+        </section>
+        <section className="card p-5 lg:col-span-2">
+          <div className="flex items-center justify-between"><div><h2 className="font-semibold">Continuous AI evolution</h2><p className="text-xs text-gray-500">Discover public AI updates, record evidence, evaluate and promote only reviewed changes.</p></div><button className="btn-primary" onClick={()=>void runEvolution()} disabled={evolutionBusy||!agentId}><Rocket size={14}/>{evolutionBusy?"Queued...":"Run trainer"}</button></div>
+          <div className="mt-4 grid gap-2 md:grid-cols-2">{evolutionRuns.slice(0,6).map(r=><div key={r.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span>{r.trigger} · {r.status}</span><span>{r.candidates_created} candidates</span></div><p className="mt-1 text-xs text-gray-500">{r.summary}</p></div>)}</div>
+          <div className="mt-4 space-y-2">{candidates.filter(c=>c.approval_status!=="rejected").slice(0,8).map(c=><div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 dark:border-gray-800"><div><p className="text-sm font-medium">{c.title}</p><p className="text-xs text-gray-500">{c.improvement_type} · {c.risk_level} · {c.approval_status}</p></div><div className="flex gap-2">{c.approval_status==="pending"&&<><button className="btn-secondary" onClick={()=>void reviewCandidate(c.id,"rejected")}>Reject</button><button className="btn-primary" onClick={()=>void reviewCandidate(c.id,"approved")}>Approve</button></>}{c.approval_status==="approved"&&c.regression_passed&&<button className="btn-primary" onClick={()=>void promoteCandidate(c.id)}>Promote</button>}</div></div>)}</div>
         </section>
         <section className="card p-5 lg:col-span-2">
           <div className="flex items-center gap-2"><CalendarClock size={18}/><h2 className="font-semibold">Deployment channels</h2></div>
