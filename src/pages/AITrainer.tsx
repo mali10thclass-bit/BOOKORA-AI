@@ -48,14 +48,18 @@ export function AITrainer() {
   const addSource = async () => {
     if (!business || !name.trim() || (!content.trim() && !url.trim())) return;
     setSaving(true);
-    const { data: inserted, error } = await supabase.from("ai_knowledge_sources").insert({
-      business_id: business.id,
-      name: name.trim(),
-      source_type: type,
-      content: content.trim() || url.trim(),
-      metadata: url.trim() ? { url: url.trim(), ingestion: "pending" } : { ingestion: "manual" },
-      is_active: true,
-    });
+    const { data: inserted, error } = await supabase
+      .from("ai_knowledge_sources")
+      .insert({
+        business_id: business.id,
+        name: name.trim(),
+        source_type: type,
+        content: content.trim() || url.trim(),
+        metadata: url.trim() ? { url: url.trim(), ingestion: "pending" } : { ingestion: "manual" },
+        is_active: true,
+      })
+      .select("id")
+      .single();
     if (!error && inserted?.id) {
       await supabase.rpc("index_ai_knowledge_source", { p_source_id: inserted.id });
       setName(""); setUrl(""); setContent("");
