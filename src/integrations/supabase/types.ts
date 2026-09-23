@@ -582,6 +582,7 @@ export type Database = {
           type: string;
           capacity: number;
           location_id: string|null;
+          description: string | null;
           is_active: boolean;
           created_at: string;
         };
@@ -591,6 +592,7 @@ export type Database = {
           type?: string;
           capacity?: number;
           location_id?: string|null;
+          description?: string | null;
           is_active?: boolean;
         };
         Update: {
@@ -599,6 +601,7 @@ export type Database = {
           type?: string;
           capacity?: number;
           location_id?: string|null;
+          description?: string | null;
           is_active?: boolean;
         };
         Relationships: [];
