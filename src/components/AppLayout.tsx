@@ -20,6 +20,12 @@ import {
   Calendar,
   AlertCircle,
   CalendarPlus,
+  ListPlus,
+  Box,
+  MessageSquare,
+  BrainCircuit,
+  Workflow,
+  Code2,
 } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
@@ -65,6 +71,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/customers", icon: Users, label: t("customers") },
         { to: "/services", icon: Sparkles, label: t("services") },
         { to: "/staff", icon: UserCog, label: t("staff") },
+        { to: "/resources", icon: Box, label: "Resources" },
+        { to: "/waitlist", icon: ListPlus, label: "Waitlist" },
       ],
     },
     {
@@ -72,6 +80,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
       items: [
         { to: "/analytics", icon: BarChart3, label: t("analytics") },
         { to: "/ai-assistant", icon: Bot, label: t("ai_assistant") },
+        { to: "/ai-trainer", icon: BrainCircuit, label: "AI Trainer" },
+        { to: "/reviews", icon: MessageSquare, label: "Reviews" },
       ],
     },
     {
@@ -84,6 +94,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           external: true,
         },
         { to: "/notifications", icon: Bell, label: t("notifications") },
+        { to: "/reviews", icon: MessageSquare, label: "Reputation" },
       ],
     },
     {
@@ -220,7 +231,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   ? t("free")
                   : business.plan === "pro"
                     ? t("pro")
-                    : t("ultimate")}{" "}
+                    : business.plan === "enterprise"
+                      ? "Enterprise"
+                      : t("ultimate")}{" "}
                 · {business.currency || "USD"}
               </p>
             </div>
