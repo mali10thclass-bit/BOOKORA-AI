@@ -222,7 +222,7 @@ export function AIAgentOperations() {
     } finally { setBusy(false); }
   };
 
-  return <PlanGate minimumPlan="pro" featureName="AI Agent Operations">
+  return <PlanGate minimumPlan="ultimate" featureName="AI Agent Operations">
     <div className="mx-auto max-w-7xl space-y-5">
       <section className="card p-6">
         <div className="flex items-center gap-3"><ShieldCheck className="text-primary-600"/><div><h1 className="text-2xl font-bold">AI Agent Operations</h1><p className="text-sm text-gray-500">Tools, approvals, evaluation, human handoff and deployment controls for production agents.</p></div></div>
