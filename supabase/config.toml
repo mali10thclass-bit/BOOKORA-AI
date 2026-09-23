@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.public-ai-chat]
 verify_jwt = false
+
+[functions.ai-agent-tool-gateway]
+verify_jwt = false
