@@ -24,6 +24,8 @@ import {
   Box,
   MessageSquare,
   BrainCircuit,
+  Workflow,
+  Code2,
 } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
@@ -79,6 +81,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/analytics", icon: BarChart3, label: t("analytics") },
         { to: "/ai-assistant", icon: Bot, label: t("ai_assistant") },
         { to: "/ai-trainer", icon: BrainCircuit, label: "AI Trainer" },
+        { to: "/automations", icon: Workflow, label: "Automations" },
         { to: "/reviews", icon: MessageSquare, label: "Reviews" },
       ],
     },
@@ -98,6 +101,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       label: "System",
       items: [
         { to: "/plans", icon: CreditCard, label: t("plans") },
+        { to: "/developer", icon: Code2, label: "Developer" },
         { to: "/settings", icon: Settings, label: t("settings") },
       ],
     },
