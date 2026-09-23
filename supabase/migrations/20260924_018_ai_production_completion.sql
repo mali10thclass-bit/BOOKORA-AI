@@ -109,3 +109,30 @@ begin
 end; $$;
 revoke all on function public.enqueue_scheduled_ai_evolution() from public;
 grant execute on function public.enqueue_scheduled_ai_evolution() to service_role;
+
+
+create or replace function public.enforce_ai_ultimate_plan()
+returns trigger language plpgsql security definer set search_path=public as $$
+begin
+  if not public.bookora_plan_allows_feature(new.business_id, case
+    when tg_table_name='ai_generation_jobs' then 'ai_generation'
+    when tg_table_name='ai_agent_schedules' then 'ai_evolution'
+    when tg_table_name='ai_agents' then 'ai_agent_studio'
+    when tg_table_name='ai_agent_eval_runs' then 'ai_agent_operations'
+    else 'ai_agent_operations' end) then
+    raise exception 'This AI capability requires an Ultimate or Enterprise plan';
+  end if;
+  return new;
+end; $$;
+
+drop trigger if exists ai_agents_plan_guard on public.ai_agents;
+create trigger ai_agents_plan_guard before insert or update on public.ai_agents
+for each row execute function public.enforce_ai_ultimate_plan();
+
+drop trigger if exists ai_generation_jobs_plan_guard on public.ai_generation_jobs;
+create trigger ai_generation_jobs_plan_guard before insert or update on public.ai_generation_jobs
+for each row execute function public.enforce_ai_ultimate_plan();
+
+drop trigger if exists ai_agent_schedules_plan_guard on public.ai_agent_schedules;
+create trigger ai_agent_schedules_plan_guard before insert or update on public.ai_agent_schedules
+for each row execute function public.enforce_ai_ultimate_plan();
