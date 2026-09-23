@@ -1,3 +1,39 @@
+-- BOOKORA AI knowledge foundation prerequisites.
+create table if not exists public.ai_knowledge_sources (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  name text not null,
+  source_type text not null default 'manual',
+  content text not null default '',
+  source_url text,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists ai_knowledge_sources_business_idx on public.ai_knowledge_sources(business_id,created_at desc);
+alter table public.ai_knowledge_sources enable row level security;
+drop policy if exists ai_knowledge_sources_member on public.ai_knowledge_sources;
+create policy ai_knowledge_sources_member on public.ai_knowledge_sources for all to authenticated
+using (public.is_business_member(business_id))
+with check (public.is_business_member(business_id));
+grant select,insert,update,delete on public.ai_knowledge_sources to authenticated;
+
+create table if not exists public.ai_training_runs (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  prompt text not null,
+  expected_answer text,
+  actual_answer text,
+  score numeric,
+  created_at timestamptz not null default now()
+);
+alter table public.ai_training_runs enable row level security;
+drop policy if exists ai_training_runs_member on public.ai_training_runs;
+create policy ai_training_runs_member on public.ai_training_runs for all to authenticated
+using (public.is_business_member(business_id))
+with check (public.is_business_member(business_id));
+grant select,insert,update,delete on public.ai_training_runs to authenticated;
+
 -- BOOKORA AI AI-native knowledge, evaluation and safe-action layer
 alter table public.ai_knowledge_sources add column if not exists source_url text null, add column if not exists updated_at timestamptz not null default now();
 create index if not exists ai_knowledge_sources_active_idx on public.ai_knowledge_sources (business_id, is_active, created_at desc);
