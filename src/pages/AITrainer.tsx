@@ -165,7 +165,7 @@ export function AITrainer() {
                   const result = await ask({ data: { question: testPrompt.trim(), language: "en" } });
                   const answer = result.answer ?? result.error ?? "No answer.";
                   setTestAnswer(answer);
-                  await supabase.rpc("record_ai_training_run", { p_business_id: business.id, p_prompt: testPrompt.trim(), p_expected_answer: null, p_actual_answer: answer, p_score: null });
+                  await supabase.from("ai_training_runs").insert({ business_id: business.id, prompt: testPrompt.trim(), expected_answer: null, actual_answer: answer, score: null });
                 } finally { setTesting(false); }
               })()}><Play size={15} /> {testing ? "Testing..." : "Run evaluation"}</button>
             </div>
