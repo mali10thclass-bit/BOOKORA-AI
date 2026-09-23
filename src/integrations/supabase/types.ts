@@ -1072,9 +1072,9 @@ export type Database = {
       };
     };
       ai_agents: {
-        Row: { id: string; business_id: string; name: string; description: string | null; role: string; system_prompt: string; model: string | null; status: string; config: Json; capabilities: Json; starter_prompts: Json; created_by: string | null; created_at: string; updated_at: string; };
-        Insert: { id?: string; business_id: string; name: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; created_by?: string | null; };
-        Update: { name?: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; };
+        Row: { id: string; business_id: string; name: string; description: string | null; role: string; system_prompt: string; model: string | null; status: string; config: Json; capabilities: Json; starter_prompts: Json; created_by: string | null; created_at: string; updated_at: string; auto_update_enabled: boolean; evolution_policy: Json; };
+        Insert: { id?: string; business_id: string; name: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; created_by?: string | null; auto_update_enabled?: boolean; evolution_policy?: Json; };
+        Update: { name?: string; description?: string | null; role?: string; system_prompt?: string; model?: string | null; status?: string; config?: Json; capabilities?: Json; starter_prompts?: Json; auto_update_enabled?: boolean; evolution_policy?: Json; };
         Relationships: [];
       };
       ai_agent_memories: {
