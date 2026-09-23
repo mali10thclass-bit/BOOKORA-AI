@@ -12,6 +12,13 @@ create table if not exists public.ai_knowledge_refresh_jobs (
   completed_at timestamptz,
   updated_at timestamptz not null default now()
 );
+alter table public.ai_knowledge_refresh_jobs
+  add column if not exists attempt_count integer not null default 0,
+  add column if not exists last_error text,
+  add column if not exists content_digest text,
+  add column if not exists queued_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists ai_knowledge_refresh_jobs_queue_idx
 on public.ai_knowledge_refresh_jobs(status, queued_at);
 create unique index if not exists ai_knowledge_refresh_one_active_source_idx
