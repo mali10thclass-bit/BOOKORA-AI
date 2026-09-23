@@ -1108,9 +1108,9 @@ export type Database = {
         Relationships: [];
       };
       ai_agent_schedules: {
-        Row: { id: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone: string; enabled: boolean; last_run_at: string | null; next_run_at: string | null; created_at: string; updated_at: string; };
-        Insert: { id?: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone?: string; enabled?: boolean; last_run_at?: string | null; next_run_at?: string | null; };
-        Update: { name?: string; cron?: string; prompt?: string; timezone?: string; enabled?: boolean; last_run_at?: string | null; next_run_at?: string | null; updated_at?: string; };
+        Row: { id: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone: string; enabled: boolean; interval_minutes: number; last_run_at: string | null; next_run_at: string | null; created_at: string; updated_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; cron: string; prompt: string; timezone?: string; enabled?: boolean; interval_minutes?: number; last_run_at?: string | null; next_run_at?: string | null; };
+        Update: { name?: string; cron?: string; prompt?: string; timezone?: string; enabled?: boolean; interval_minutes?: number; last_run_at?: string | null; next_run_at?: string | null; updated_at?: string; };
         Relationships: [];
       };
       ai_agent_handoffs: {
@@ -1129,6 +1129,24 @@ export type Database = {
         Row: { id: string; business_id: string; agent_id: string; channel: string; public_key: string | null; settings: Json; enabled: boolean; created_at: string; updated_at: string; };
         Insert: { id?: string; business_id: string; agent_id: string; channel: string; public_key?: string | null; settings?: Json; enabled?: boolean; };
         Update: { channel?: string; public_key?: string | null; settings?: Json; enabled?: boolean; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_agent_versions: {
+        Row: { id: string; business_id: string; agent_id: string; version_number: number; reason: string; system_prompt: string | null; model: string | null; config: Json; capabilities: Json; tool_registry: Json; created_by: string | null; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; version_number: number; reason?: string; system_prompt?: string | null; model?: string | null; config?: Json; capabilities?: Json; tool_registry?: Json; created_by?: string | null; };
+        Update: { reason?: string; };
+        Relationships: [];
+      };
+      ai_agent_eval_runs: {
+        Row: { id: string; business_id: string; agent_id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; error: string | null; created_at: string; completed_at: string | null; };
+        Insert: { id?: string; business_id: string; agent_id: string; status?: string; case_count?: number; passed_count?: number; score?: number | null; summary?: string | null; error?: string | null; };
+        Update: { status?: string; case_count?: number; passed_count?: number; score?: number | null; summary?: string | null; error?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_eval_results: {
+        Row: { id: string; run_id: string; business_id: string; agent_id: string; case_id: string; input: string; output: string | null; passed: boolean; score: number; feedback: string | null; created_at: string; };
+        Insert: { id?: string; run_id: string; business_id: string; agent_id: string; case_id: string; input: string; output?: string | null; passed?: boolean; score?: number; feedback?: string | null; };
+        Update: { output?: string | null; passed?: boolean; score?: number; feedback?: string | null; };
         Relationships: [];
       };
       ai_model_catalog: {
