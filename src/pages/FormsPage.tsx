@@ -3,6 +3,7 @@ import { ClipboardList, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
+import type { Json } from "@/integrations/supabase/types";
 
 type Form = { id: string; name: string; description: string | null; schema: unknown; is_active: boolean };
 
@@ -13,7 +14,7 @@ export function FormsPage() {
   const [schema, setSchema] = useState('[{"label":"Your question","type":"text","required":true}]');
   const load = async () => { if (!business) return; const { data, error } = await supabase.from("forms").select("id,name,description,schema,is_active").eq("business_id", business.id).order("name"); if (!error) setItems((data ?? []) as Form[]); };
   useEffect(()=>{void load();},[business]);
-  const add = async () => { if (!business || !name.trim()) return; let parsed: unknown; try { parsed=JSON.parse(schema); } catch { return; } const { error }=await supabase.from("forms").insert({business_id:business.id,name:name.trim(),schema:parsed}); if(!error){setName("");await load();} };
+  const add = async () => { if (!business || !name.trim()) return; let parsed: unknown; try { parsed=JSON.parse(schema); } catch { return; } const { error }=await supabase.from("forms").insert({business_id:business.id,name:name.trim(),schema:parsed as Json}); if(!error){setName("");await load();} };
   const remove=async(id:string)=>{const {error}=await supabase.from("forms").delete().eq("id",id);if(!error)setItems(x=>x.filter((item)=>item.id!==id));};
   return <PlanGate minimumPlan="pro" featureName="Forms & Intake"><div className="mx-auto max-w-5xl space-y-6">
     <div><h1 className="text-2xl font-bold">Forms & Intake</h1><p className="mt-1 text-sm text-gray-500">Create structured intake forms that can be attached to bookings and customer records.</p></div>
