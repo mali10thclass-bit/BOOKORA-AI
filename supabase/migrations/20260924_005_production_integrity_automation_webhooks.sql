@@ -163,13 +163,12 @@ declare v public.automation_runs;
 begin
   select * into v from public.automation_runs ar
   where ar.id=p_run_id
-    and ar.status='pending'
-    and (ar.scheduled_at is null or ar.scheduled_at <= now())
+    and ar.status='queued'
   for update skip locked;
   if not found then raise exception 'Automation run is not claimable'; end if;
 
   update public.automation_runs
-  set status='running'
+  set status='running', started_at=now()
   where id=p_run_id
   returning * into v;
   return v;
