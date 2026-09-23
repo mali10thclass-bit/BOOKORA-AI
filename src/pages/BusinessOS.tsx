@@ -43,7 +43,7 @@ export function BusinessOS() {
   if (!business) return null;
 
   return (
-    <PlanGate minimumPlan="pro" feature="Business OS">
+    <PlanGate minimumPlan="pro" featureName="Business OS">
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gradient-to-br from-gray-950 via-gray-900 to-primary-950 p-6 text-white shadow-xl dark:border-gray-800">
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-500/20 blur-3xl" />
