@@ -10,13 +10,15 @@ type Agent = { id: string; name: string };
 type Tool = { id: string; agent_id: string; name: string; tool_type: string; approval_required: boolean; enabled: boolean };
 type Handoff = { id: string; agent_id: string; reason: string; status: string; notes: string | null };
 type Deployment = { id: string; agent_id: string; channel: string; public_key: string | null; enabled: boolean };
+type EvolutionRun = { id: string; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; created_at: string };
+type Candidate = { id: string; title: string; improvement_type: string; risk_level: string; regression_passed: boolean; approval_status: string };
 
 export function AIAgentOperations() {
   const { business, membership } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [tools, setTools] = useState<Tool[]>([]);
   const [handoffs, setHandoffs] = useState<Handoff[]>([]);
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);\n  const [evolutionRuns, setEvolutionRuns] = useState<EvolutionRun[]>([]);\n  const [candidates, setCandidates] = useState<Candidate[]>([]);\n  const [evolutionBusy, setEvolutionBusy] = useState(false);
   const [agentId, setAgentId] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -28,8 +30,10 @@ export function AIAgentOperations() {
       supabase.from("ai_agent_tools").select("id,agent_id,name,tool_type,approval_required,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_agent_handoffs").select("id,agent_id,reason,status,notes").eq("business_id",business.id).order("created_at",{ascending:false}).limit(30),
       supabase.from("ai_agent_deployments").select("id,agent_id,channel,public_key,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
+      supabase.from("ai_evolution_runs").select("id,status,trigger,sources_scanned,models_discovered,candidates_created,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
+      supabase.from("ai_improvement_candidates").select("id,title,improvement_type,risk_level,regression_passed,approval_status").eq("business_id",business.id).order("created_at",{ascending:false}).limit(20),
     ]);
-    setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]); setDeployments((d.data??[]) as Deployment[]);
+    setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]); setDeployments((d.data??[]) as Deployment[]); setEvolutionRuns((e.data??[]) as EvolutionRun[]); setCandidates((c.data??[]) as Candidate[]);
     if (!agentId && a.data?.[0]) setAgentId(a.data[0].id);
   };
   useEffect(()=>{ void load(); },[business]);
@@ -54,6 +58,25 @@ export function AIAgentOperations() {
     }).select("id,agent_id,reason,status,notes").single();
     if (data) setHandoffs(x=>[data as Handoff,...x]);
     setBusy(false);
+  };
+
+  const runEvolution = async () => {
+    if (evolutionBusy) return;
+    setEvolutionBusy(true);
+    try {
+      const workerUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-evolution-worker`;
+      const { data: session } = await supabase.auth.getSession();
+      const secret = import.meta.env.VITE_BOOKORA_WORKER_SECRET;
+      if (!secret) throw new Error("AI evolution worker is not configured in this environment.");
+      const response = await fetch(workerUrl, { method: "POST", headers: { "x-bookora-worker-secret": secret, "Authorization": `Bearer ${session.session?.access_token ?? ""}` } });
+      if (!response.ok) throw new Error(`Evolution worker returned HTTP ${response.status}`);
+      await load();
+    } finally { setEvolutionBusy(false); }
+  };
+
+  const reviewCandidate = async (id: string, status: "approved"|"rejected") => {
+    await supabase.from("ai_improvement_candidates").update({ approval_status: status, reviewed_at: new Date().toISOString() }).eq("id", id).eq("business_id", business?.id ?? "");
+    await load();
   };
 
   const deploy = async (channel: "dashboard"|"public_web"|"embed"|"api"|"workflow") => {
