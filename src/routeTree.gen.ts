@@ -31,7 +31,7 @@ import { Route as FormsRouteImport } from './routes/forms'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
-import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
+import { Route as SmartOperationsRouteImport } from './routes/smart-operations'\nimport { Route as BusinessOsRouteImport } from './routes/business-os'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
