@@ -64,12 +64,13 @@ export function AIAgentOperations() {
     if (evolutionBusy) return;
     setEvolutionBusy(true);
     try {
-      const workerUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-evolution-worker`;
-      const { data: session } = await supabase.auth.getSession();
-      const secret = import.meta.env.VITE_BOOKORA_WORKER_SECRET;
-      if (!secret) throw new Error("AI evolution worker is not configured in this environment.");
-      const response = await fetch(workerUrl, { method: "POST", headers: { "x-bookora-worker-secret": secret, "Authorization": `Bearer ${session.session?.access_token ?? ""}` } });
-      if (!response.ok) throw new Error(`Evolution worker returned HTTP ${response.status}`);
+      if (!business) return;
+      await supabase.from("ai_evolution_runs").insert({
+        business_id: business.id,
+        agent_id: agentId || null,
+        status: "queued",
+        trigger: "manual",
+      });
       await load();
     } finally { setEvolutionBusy(false); }
   };
