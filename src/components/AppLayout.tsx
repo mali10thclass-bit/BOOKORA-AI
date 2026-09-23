@@ -88,6 +88,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       items: [
         { to: "/analytics", icon: BarChart3, label: t("analytics") },
         { to: "/ai-assistant", icon: Bot, label: t("ai_assistant") },
+        { to: "/ai-agent-studio", icon: BrainCircuit, label: "AI Agent Studio" },
         { to: "/ai-trainer", icon: BrainCircuit, label: "AI Trainer" },
         { to: "/automations", icon: Workflow, label: "Automations" },
         { to: "/reviews", icon: MessageSquare, label: "Reviews" },
