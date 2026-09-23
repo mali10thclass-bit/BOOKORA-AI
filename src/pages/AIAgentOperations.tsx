@@ -33,6 +33,7 @@ export function AIAgentOperations() {
   const [evaluationBusy, setEvaluationBusy] = useState(false);
   const [scheduleBusy, setScheduleBusy] = useState(false);
   const [issuedPublicKey, setIssuedPublicKey] = useState<{ deploymentId: string; key: string } | null>(null);
+  const [pendingToolApprovals, setPendingToolApprovals] = useState<Record<string, { toolId: string; input: Record<string, unknown> }>>({});
 
   const load = async () => {
     if (!business) return;
@@ -75,8 +76,38 @@ export function AIAgentOperations() {
         body: JSON.stringify({ toolId, input }),
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) console.error("[agent-tool]", payload.error);
+      if (!response.ok) {
+        console.error("[agent-tool]", payload.error);
+      } else if (payload.status === "approval_required" && payload.runId) {
+        setPendingToolApprovals((items) => ({ ...items, [String(payload.runId)]: { toolId, input } }));
+      }
     } finally { setBusy(false); }
+  };
+
+  const approveToolRun = async (runId: string) => {
+    const pending = pendingToolApprovals[runId];
+    if (!pending || busy) return;
+    setBusy(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const base = String(import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+      const response = await fetch(base + "/functions/v1/ai-agent-tool-gateway", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(session.session?.access_token ? { Authorization: "Bearer " + session.session.access_token } : {}) },
+        body: JSON.stringify({ toolId: pending.toolId, approvalRunId: runId }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) console.error("[agent-tool-approval]", payload.error);
+      if (response.ok) {
+        setPendingToolApprovals((items) => {
+          const next = { ...items };
+          delete next[runId];
+          return next;
+        });
+      }
+    } finally {
+      setBusy(false);
+    }
   };
 
   const createHandoff = async () => {
@@ -200,6 +231,21 @@ export function AIAgentOperations() {
         <label className="text-sm font-medium">Active agent</label>
         <select className="input mt-2" value={agentId} onChange={e=>setAgentId(e.target.value)}>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
       </section>
+        <section className="card p-5">
+          <div className="flex items-center gap-2"><ShieldCheck size={18}/><h2 className="font-semibold">Pending tool approvals</h2></div>
+          <p className="mt-1 text-xs text-gray-500">Approvals are bound to the exact server-created proposed tool run.</p>
+          <div className="mt-4 space-y-2">
+            {Object.entries(pendingToolApprovals).map(([runId, pending]) => (
+              <div key={runId} className="rounded-xl border p-3 dark:border-gray-800">
+                <div className="flex items-center justify-between gap-3">
+                  <div><p className="text-sm font-medium">Tool run awaiting approval</p><p className="text-xs text-gray-500">{pending.toolId}</p></div>
+                  <button className="btn-primary" disabled={busy} onClick={()=>void approveToolRun(runId)}>Approve &amp; run</button>
+                </div>
+              </div>
+            ))}
+            {!Object.keys(pendingToolApprovals).length && <p className="text-xs text-gray-500">No pending approvals.</p>}
+          </div>
+        </section>
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="card p-5">
           <div className="flex items-center gap-2"><Wrench size={18}/><h2 className="font-semibold">Agent tools</h2></div>
