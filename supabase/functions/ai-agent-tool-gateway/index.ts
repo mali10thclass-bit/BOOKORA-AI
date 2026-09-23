@@ -47,6 +47,27 @@ Deno.serve(async (req) => {
     if (memberError) throw memberError;
     if (!member) return Response.json({ error: "Not authorized" }, { status: 403 });
 
+    const featureByTool: Record<string, string> = {
+      knowledge: "knowledge_rag",
+      analytics: "analytics",
+      crm: "crm_ai",
+      automation: "advanced_automation",
+      booking: "ai_agent_operations",
+      webhook: "ai_agent_operations",
+      http: "ai_agent_operations",
+      database: "ai_agent_operations",
+      custom: "ai_agent_operations",
+    };
+    const requiredFeature = featureByTool[tool.tool_type] ?? "ai_agent_operations";
+    const { data: allowed, error: entitlementError } = await admin.rpc("bookora_plan_allows_feature", {
+      b_id: tool.business_id,
+      feature_key: requiredFeature,
+    });
+    if (entitlementError) throw entitlementError;
+    if (allowed !== true) {
+      return Response.json({ error: "This AI tool requires a higher BOOKORA plan.", requiredFeature }, { status: 402 });
+    }
+
     const runBase = {
       business_id: tool.business_id,
       agent_id: tool.agent_id,
