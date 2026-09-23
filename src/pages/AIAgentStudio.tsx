@@ -87,9 +87,9 @@ export function AIAgentStudio() {
       const result=await ask({data:{question:text,language:"en",conversationId,agentId:agent.id}});
       const answer=result.answer??result.error??"I could not produce a grounded answer.";
       await supabase.from("ai_messages").insert({conversation_id:conversationId,business_id:business.id,role:"assistant",content:answer});
-      const memoryIntent=/\\b(remember|memorize|save this|keep in mind|always)\\b/i.test(text);
+      const memoryIntent=/\b(remember|memorize|save this|keep in mind|always)\b/i.test(text);
       if(memoryIntent && answer && !result.error){
-        const memoryContent=text.replace(/^\\s*(remember|memorize|save this|keep in mind|always)[:\\s-]*/i,"").trim();
+        const memoryContent=text.replace(/^\s*(remember|memorize|save this|keep in mind|always)[:\s-]*/i,"").trim();
         if(memoryContent) {
           const {data:memory}=await supabase.from("ai_agent_memories").insert({
             business_id:business.id,agent_id:agent.id,memory_type:"instruction",content:memoryContent,source:"conversation",
