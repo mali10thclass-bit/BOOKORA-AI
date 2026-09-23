@@ -29,6 +29,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Format
+        run: npx prettier --write .
+
       - name: Lint
         run: npm run lint
 
