@@ -609,7 +609,7 @@ export type Database = {
           id: string;
           business_id: string;
           customer_id: string;
-          service_id: string;
+          service_id: string | null;
           preferred_start: string|null;
           preferred_end: string|null;
           status: string;
@@ -620,7 +620,7 @@ export type Database = {
         Insert: {
           business_id: string;
           customer_id: string;
-          service_id: string;
+          service_id: string | null;
           preferred_start?: string|null;
           preferred_end?: string|null;
           status?: string;
