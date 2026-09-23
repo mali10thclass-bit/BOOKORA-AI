@@ -257,3 +257,36 @@ select jsonb_build_object(
 $$;
 revoke all on function public.get_business_analytics(uuid,timestamptz,timestamptz) from public;
 grant execute on function public.get_business_analytics(uuid,timestamptz,timestamptz) to authenticated;
+
+-- 7) Safe lexical fallback for knowledge retrieval while vector indexing is unavailable.
+create or replace function public.search_ai_knowledge_text(
+  p_business_id uuid,
+  p_query text,
+  p_match_count integer default 8
+) returns table(
+  chunk_id uuid,
+  source_id uuid,
+  content text,
+  metadata jsonb,
+  rank real
+)
+language sql
+stable
+security invoker
+set search_path=public
+as $$
+  select c.id,c.source_id,c.content,c.metadata,
+    ts_rank_cd(
+      to_tsvector('simple', c.content),
+      plainto_tsquery('simple', left(coalesce(p_query,''),500))
+    )::real as rank
+  from public.ai_knowledge_chunks c
+  where c.business_id=p_business_id
+    and c.status='indexed'
+    and to_tsvector('simple', c.content) @@ plainto_tsquery('simple', left(coalesce(p_query,''),500))
+    and public.is_business_member(c.business_id)
+  order by rank desc
+  limit greatest(1,least(20,p_match_count));
+$$;
+revoke all on function public.search_ai_knowledge_text(uuid,text,integer) from public;
+grant execute on function public.search_ai_knowledge_text(uuid,text,integer) to authenticated;
