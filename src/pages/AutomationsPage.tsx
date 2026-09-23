@@ -3,6 +3,7 @@ import { GitBranch, Plus, Play, RefreshCw, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
+import type { Json } from "@/integrations/supabase/types";
 
 type Workflow = { id: string; name: string; description: string | null; trigger_type: string; definition: Record<string, unknown>; is_active: boolean; created_at: string };
 
@@ -26,7 +27,7 @@ export function AutomationsPage() {
     let parsed: Record<string, unknown>;
     try { parsed = JSON.parse(definition) as Record<string, unknown>; } catch { return; }
     setSaving(true);
-    const { error } = await supabase.from("automation_workflows").insert({ business_id: business.id, name: name.trim(), trigger_type: trigger, definition: parsed, is_active: false });
+    const { error } = await supabase.from("automation_workflows").insert({ business_id: business.id, name: name.trim(), trigger_type: trigger, definition: parsed as Json, is_active: false });
     if (!error) { setName(""); setDefinition('{"steps":[]}'); await load(); }
     setSaving(false);
   };
