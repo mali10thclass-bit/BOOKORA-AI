@@ -1135,6 +1135,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ai_business_snapshot: {
+        Args: { p_business_id: string; p_question?: string };
+        Returns: Json;
+      };
       create_api_key: {
         Args: {
           p_business_id: string;
