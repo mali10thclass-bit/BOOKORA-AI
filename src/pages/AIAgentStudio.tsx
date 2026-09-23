@@ -135,7 +135,7 @@ export function AIAgentStudio() {
   const filtered=useMemo(()=>templates.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.role.includes(search.toLowerCase())),[search]);
 
   if(!business) return null;
-  return <PlanGate minimumPlan="pro" featureName="AI Agent Studio">
+  return <PlanGate minimumPlan="ultimate" featureName="AI Agent Studio">
     <div className="mx-auto max-w-7xl space-y-5">
       <section className="overflow-hidden rounded-3xl border border-gray-800 bg-gray-950 p-6 text-white shadow-xl">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
