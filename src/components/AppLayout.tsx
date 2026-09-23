@@ -26,6 +26,8 @@ import {
   BrainCircuit,
   Workflow,
   Code2,
+  ClipboardList,
+  Gift,
 } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
@@ -73,6 +75,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/staff", icon: UserCog, label: t("staff") },
         { to: "/resources", icon: Box, label: "Resources" },
         { to: "/waitlist", icon: ListPlus, label: "Waitlist" },
+        { to: "/forms", icon: ClipboardList, label: "Forms & Intake" },
+        { to: "/packages", icon: Gift, label: "Packages" },
       ],
     },
     {
