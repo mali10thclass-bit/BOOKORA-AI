@@ -734,26 +734,30 @@ export type Database = {
           business_id: string;
           name: string;
           source_type: string;
-          content: string;
+          source_url: string | null;
+          content_text: string | null;
           metadata: Json;
-          is_active: boolean;
+          status: string;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           business_id: string;
           name: string;
           source_type?: string;
-          content?: string;
+          source_url?: string | null;
+          content_text?: string | null;
           metadata?: Json;
-          is_active?: boolean;
+          status?: string;
         };
         Update: {
           business_id?: string;
           name?: string;
           source_type?: string;
-          content?: string;
+          source_url?: string | null;
+          content_text?: string | null;
           metadata?: Json;
-          is_active?: boolean;
+          status?: string;
         };
         Relationships: [];
       };
@@ -821,7 +825,7 @@ export type Database = {
           input: Json;
           output: Json;
           started_at: string|null;
-          finished_at: string|null;
+          completed_at: string|null;
           created_at: string;
         };
         Insert: {
@@ -831,7 +835,7 @@ export type Database = {
           input?: Json;
           output?: Json;
           started_at?: string|null;
-          finished_at?: string|null;
+          completed_at?: string|null;
         };
         Update: {
           workflow_id?: string;
