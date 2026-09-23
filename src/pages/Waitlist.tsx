@@ -16,6 +16,7 @@ export function Waitlist() {
   const [customerId, setCustomerId] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [notes, setNotes] = useState("");
+  const [priority, setPriority] = useState("0");
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
@@ -35,8 +36,8 @@ export function Waitlist() {
 
   const add = async () => {
     if (!business || !customerId) return;
-    const { error } = await supabase.from("waitlist_entries").insert({ business_id: business.id, customer_id: customerId, service_id: serviceId || null, notes: notes.trim() || null });
-    if (!error) { setCustomerId(""); setServiceId(""); setNotes(""); await load(); }
+    const { error } = await supabase.from("waitlist_entries").insert({ business_id: business.id, customer_id: customerId, service_id: serviceId || null, notes: notes.trim() || null, priority: Number(priority) });
+    if (!error) { setCustomerId(""); setServiceId(""); setNotes(""); setPriority("0"); await load(); }
   };
   const remove = async (id: string) => {
     const { error } = await supabase.from("waitlist_entries").delete().eq("id", id);
@@ -54,7 +55,7 @@ export function Waitlist() {
           <select className="input" value={serviceId} onChange={(e) => setServiceId(e.target.value)}><option value="">Any service</option>{services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
           <button className="btn-primary" disabled={!customerId} onClick={() => void add()}><Plus size={15} /> Add</button>
         </div>
-        <textarea className="input mt-3 min-h-20" placeholder="Preference or notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <select className="input mt-3" value={priority} onChange={(e) => setPriority(e.target.value)}><option value="0">Normal priority</option><option value="25">High priority</option><option value="50">Very high priority</option><option value="100">VIP / urgent</option></select><textarea className="input mt-3 min-h-20" placeholder="Preference or notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </section>
       <section className="card overflow-hidden">
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800"><div><h2 className="font-semibold">Waiting customers</h2><p className="text-xs text-gray-500">{entries.length} active requests</p></div><button className="btn-secondary" onClick={() => void load()} disabled={loading}><RefreshCw size={15} /> Refresh</button></div>
