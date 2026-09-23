@@ -195,6 +195,14 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/ai-trainer': typeof AiTrainerRoute
+  '/automations': typeof AutomationsRoute
+  '/developer': typeof DeveloperRoute
+  '/forms': typeof FormsRoute
+  '/packages': typeof PackagesRoute
+  '/resources': typeof ResourcesRoute
+  '/reviews': typeof ReviewsRoute
+  '/waitlist': typeof WaitlistRoute
   '/smart-operations': typeof SmartOperationsRoute
   '/book/$slug': typeof BookSlugRoute
 }
@@ -213,6 +221,16 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
+  '/ai-trainer': typeof AiTrainerRoute
+  '/automations': typeof AutomationsRoute
+  '/developer': typeof DeveloperRoute
+  '/forms': typeof FormsRoute
+  '/packages': typeof PackagesRoute
+  '/resources': typeof ResourcesRoute
+  '/reviews': typeof ReviewsRoute
+  '/waitlist': typeof WaitlistRoute
+  '/smart-operations': typeof SmartOperationsRoute
+  '/business-os': typeof BusinessOsRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRouteTypes {
@@ -255,6 +273,16 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/staff'
+    | '/ai-trainer'
+    | '/automations'
+    | '/developer'
+    | '/forms'
+    | '/packages'
+    | '/resources'
+    | '/reviews'
+    | '/waitlist'
+    | '/smart-operations'
+    | '/business-os'
     | '/book/$slug'
   id:
     | '__root__'
@@ -271,6 +299,16 @@ export interface FileRouteTypes {
     | '/services'
     | '/settings'
     | '/staff'
+    | '/ai-trainer'
+    | '/automations'
+    | '/developer'
+    | '/forms'
+    | '/packages'
+    | '/resources'
+    | '/reviews'
+    | '/waitlist'
+    | '/smart-operations'
+    | '/business-os'
     | '/book/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -464,7 +502,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessOsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/book/$slug':
+    '/book/$slug': {
       id: '/book/$slug'
       path: '/book/$slug'
       fullPath: '/book/$slug'
