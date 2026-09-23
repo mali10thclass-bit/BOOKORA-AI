@@ -597,10 +597,10 @@ export type Database = {
         Update: {
           business_id?: string;
           name?: string;
-          type??: string;
-          capacity??: number;
+          type?: string;
+          capacity?: number;
           location_id?: string|null;
-          is_active??: boolean;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -613,6 +613,7 @@ export type Database = {
           preferred_start: string|null;
           preferred_end: string|null;
           status: string;
+          priority: number;
           notes: string|null;
           created_at: string;
         };
@@ -623,6 +624,7 @@ export type Database = {
           preferred_start?: string|null;
           preferred_end?: string|null;
           status?: string;
+          priority?: number;
           notes?: string|null;
         };
         Update: {
@@ -631,7 +633,7 @@ export type Database = {
           service_id?: string;
           preferred_start?: string|null;
           preferred_end?: string|null;
-          status??: string;
+          status?: string;
           notes?: string|null;
         };
         Relationships: [];
@@ -661,10 +663,10 @@ export type Database = {
           business_id?: string;
           name?: string;
           description?: string|null;
-          price??: number;
+          price?: number;
           validity_days?: number|null;
-          credits??: number;
-          is_active??: boolean;
+          credits?: number;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -689,8 +691,8 @@ export type Database = {
           business_id?: string;
           name?: string;
           description?: string|null;
-          schema??: Json;
-          is_active??: boolean;
+          schema?: Json;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -716,10 +718,10 @@ export type Database = {
         Update: {
           business_id?: string;
           name?: string;
-          source_type??: string;
-          content??: string;
-          metadata??: Json;
-          is_active??: boolean;
+          source_type?: string;
+          content?: string;
+          metadata?: Json;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -773,8 +775,8 @@ export type Database = {
           name?: string;
           description?: string|null;
           trigger_type?: string;
-          definition??: Json;
-          is_active??: boolean;
+          definition?: Json;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -802,9 +804,9 @@ export type Database = {
         Update: {
           workflow_id?: string;
           business_id?: string;
-          status??: string;
-          input??: Json;
-          output??: Json;
+          status?: string;
+          input?: Json;
+          output?: Json;
           started_at?: string|null;
           finished_at?: string|null;
         };
@@ -837,8 +839,8 @@ export type Database = {
           rating?: number;
           title?: string|null;
           body?: string|null;
-          source??: string;
-          status??: string;
+          source?: string;
+          status?: string;
         };
         Relationships: [];
       };
@@ -902,7 +904,7 @@ export type Database = {
           endpoint_url?: string;
           secret?: string;
           events?: string[];
-          is_active??: boolean;
+          is_active?: boolean;
         };
         Relationships: [];
       };
@@ -931,7 +933,7 @@ export type Database = {
           action?: string;
           entity_type?: string|null;
           entity_id?: string|null;
-          metadata??: Json;
+          metadata?: Json;
         };
         Relationships: [];
       };
@@ -939,6 +941,35 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      create_api_key: {
+        Args: {
+          p_business_id: string;
+          p_name: string;
+          p_scopes?: string[] | null;
+          p_expires_at?: string | null;
+        };
+        Returns: Json;
+      };
+      create_webhook: {
+        Args: {
+          p_business_id: string;
+          p_name: string;
+          p_endpoint_url: string;
+          p_events?: string[] | null;
+        };
+        Returns: Json;
+      };
+      list_webhooks: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: string;
+          name: string;
+          endpoint_url: string;
+          events: string[];
+          is_active: boolean;
+          created_at: string;
+        }[];
+      };
       create_business_for_current_user: {
         Args: {
           p_address: string | null;
