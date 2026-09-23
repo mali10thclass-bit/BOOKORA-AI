@@ -6,6 +6,8 @@ import { z } from "zod";
 const AskInput = z.object({
   question: z.string().min(1).max(2000),
   language: z.enum(["en", "ur", "ar", "es", "fr"]).default("en"),
+  conversationId: z.string().uuid().optional(),
+  agentId: z.string().uuid().optional(),
 });
 
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -58,6 +60,13 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
 
     const businessId = member.business_id;
 
+    const [memoryRes, historyRes] = data.conversationId
+      ? await Promise.all([
+          supabase.from("ai_agent_memories").select("memory_type,content,confidence").eq("business_id", businessId).eq("agent_id", data.agentId ?? "").order("created_at", { ascending: false }).limit(40),
+          supabase.from("ai_messages").select("role,content").eq("business_id", businessId).eq("conversation_id", data.conversationId).order("created_at", { ascending: false }).limit(20),
+        ])
+      : [{ data: [] as { memory_type: string; content: string; confidence: number | null }[], error: null }, { data: [] as { role: string; content: string }[], error: null }];
+
     const [bookingsRes, servicesRes, staffRes, customersRes, knowledgeRes] = await Promise.all([
       supabase
         .from("bookings")
@@ -85,8 +94,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       }),
     ]);
 
-    const queryError =
-      bookingsRes.error ?? servicesRes.error ?? staffRes.error ?? customersRes.error ?? knowledgeRes.error;
+    const queryError = memoryRes.error ?? historyRes.error ?? bookingsRes.error ?? servicesRes.error ?? staffRes.error ?? customersRes.error ?? knowledgeRes.error;
     if (queryError) {
       console.error("[assistant] data query failed", queryError.message);
       return { answer: null, error: "I could not read your business data just now." };
@@ -135,7 +143,8 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       },
       services: services ?? [],
       staff: staff ?? [],
-      knowledge: knowledge.slice(0, 8),
+      agentMemory: (memoryRes.data ?? []).map((m) => ({ type: m.memory_type, content: m.content, confidence: m.confidence })).slice(0, 40),
+      recentConversation: [...(historyRes.data ?? [])].reverse().slice(-20),
       recentBookings: rows.slice(0, 120).map((b) => ({
         start: b.start_time,
         status: b.status,
@@ -164,7 +173,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         },
         system: [
           "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
-          "Answer strictly from the JSON business snapshot and retrieved business knowledge given in the user message.",
+          "Answer strictly from the JSON business snapshot, retrieved business knowledge, approved agent memory, and recent conversation given in the user message.",
           "Never invent numbers or policies. If the provided snapshot/knowledge does not contain the answer, say so plainly.",
           "Be concise: short paragraphs or small bullet lists, with concrete numbers and the business currency.",
           `Reply only in ${language}.`,
