@@ -121,9 +121,11 @@ export function PlansPage() {
               >
                 {isCurrent
                   ? "Current plan"
-                  : plan.tier === "free"
-                    ? "Available after billing setup"
-                    : "Activate through billing"}
+                   : plan.tier === "enterprise"
+                    ? "Contact sales"
+                    : plan.tier === "free"
+                      ? "Available after billing setup"
+                      : "Activate through billing"}
               </div>
             </div>
           );
