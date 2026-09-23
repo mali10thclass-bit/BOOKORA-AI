@@ -29,6 +29,7 @@ import {
   Gauge,
   ClipboardList,
   Gift,
+  BriefcaseBusiness,
 } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
@@ -76,7 +77,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         { to: "/staff", icon: UserCog, label: t("staff") },
         { to: "/resources", icon: Box, label: "Resources" },
         { to: "/waitlist", icon: ListPlus, label: "Waitlist" },
-        { to: "/smart-operations", icon: Gauge, label: "Smart Operations" },\n        { to: "/business-os", icon: BriefcaseBusiness, label: "Business OS" },
+        { to: "/smart-operations", icon: Gauge, label: "Smart Operations" },
+        { to: "/business-os", icon: BriefcaseBusiness, label: "Business OS" },
         { to: "/forms", icon: ClipboardList, label: "Forms & Intake" },
         { to: "/packages", icon: Gift, label: "Packages" },
       ],
