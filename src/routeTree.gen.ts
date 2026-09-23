@@ -31,6 +31,7 @@ import { Route as FormsRouteImport } from './routes/forms'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
+import { Route as AiAgentStudioRouteImport } from './routes/ai-agent-studio'
 import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
 import { Route as BusinessOsRouteImport } from './routes/business-os'
 
@@ -102,6 +103,11 @@ const StaffRoute = StaffRouteImport.update({
 const AiTrainerRoute = AiTrainerRouteImport.update({
   id: '/ai-trainer',
   path: '/ai-trainer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiAgentStudioRoute = AiAgentStudioRouteImport.update({
+  id: '/ai-agent-studio',
+  path: '/ai-agent-studio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AutomationsRoute = AutomationsRouteImport.update({
@@ -527,6 +533,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
   AiTrainerRoute: AiTrainerRoute,
+  AiAgentStudioRoute: AiAgentStudioRoute,
   AutomationsRoute: AutomationsRoute,
   DeveloperRoute: DeveloperRoute,
   FormsRoute: FormsRoute,
