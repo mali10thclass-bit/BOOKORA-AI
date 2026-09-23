@@ -615,6 +615,10 @@ export type Database = {
         Returns: Json;
       };
       is_business_member: { Args: { b_id: string }; Returns: boolean };
+      ai_model_comparison_catalog: {
+        Args: Record<string, never>;
+        Returns: Json;
+      };
       public_create_booking: {
         Args: {
           p_business_slug: string;
