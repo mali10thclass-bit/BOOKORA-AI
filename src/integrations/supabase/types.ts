@@ -1006,6 +1006,24 @@ export type Database = {
         Returns: Json;
       };
       is_business_member: { Args: { b_id: string }; Returns: boolean };
+      search_ai_knowledge_text: {
+        Args: { p_business_id: string; p_query: string; p_match_count?: number };
+        Returns: {
+          chunk_id: string;
+          source_id: string;
+          content: string;
+          metadata: Json;
+          rank: number;
+        }[];
+      };
+      execute_ai_action: {
+        Args: { p_action_id: string };
+        Returns: Json;
+      };
+      claim_automation_run: {
+        Args: { p_run_id: string };
+        Returns: Json;
+      };
       public_create_booking: {
         Args: {
           p_business_slug: string;
