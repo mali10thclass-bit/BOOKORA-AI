@@ -13,7 +13,7 @@ type Handoff = { id: string; agent_id: string; reason: string; status: string; n
 type Deployment = { id: string; agent_id: string; channel: string; public_key: string | null; enabled: boolean };
 type EvolutionRun = { id: string; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; created_at: string };
 type Candidate = { id: string; title: string; improvement_type: string; risk_level: string; regression_passed: boolean; approval_status: string };
-type EvalRun = { id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; created_at: string };
+type EvalRun = { id: string; status: string; case_count: number; passed_count: number; score: number | null; summary: string | null; created_at: string };\ntype AgentVersion = { id: string; version_number: number; reason: string; model: string | null; created_at: string };
 
 export function AIAgentOperations() {
   const { business, membership } = useAuth();
@@ -23,7 +23,7 @@ export function AIAgentOperations() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [evolutionRuns, setEvolutionRuns] = useState<EvolutionRun[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [evalRuns, setEvalRuns] = useState<EvalRun[]>([]);
+  const [evalRuns, setEvalRuns] = useState<EvalRun[]>([]);\n  const [versions, setVersions] = useState<AgentVersion[]>([]);
   const [agentId, setAgentId] = useState("");
   const [name, setName] = useState("");
   const [evalInput, setEvalInput] = useState("");
@@ -37,18 +37,18 @@ export function AIAgentOperations() {
 
   const load = async () => {
     if (!business) return;
-    const [a,t,h,d,e,c,er] = await Promise.all([
+    const [a,t,h,d,e,c,er,v] = await Promise.all([
       supabase.from("ai_agents").select("id,name").eq("business_id", business.id).neq("status","archived").order("name"),
       supabase.from("ai_agent_tools").select("id,agent_id,name,tool_type,approval_required,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_agent_handoffs").select("id,agent_id,reason,status,notes").eq("business_id",business.id).order("created_at",{ascending:false}).limit(30),
       supabase.from("ai_agent_deployments").select("id,agent_id,channel,public_key_prefix,enabled").eq("business_id",business.id).order("created_at",{ascending:false}),
       supabase.from("ai_evolution_runs").select("id,status,trigger,sources_scanned,models_discovered,candidates_created,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
       supabase.from("ai_improvement_candidates").select("id,title,improvement_type,risk_level,regression_passed,approval_status").eq("business_id",business.id).order("created_at",{ascending:false}).limit(20),
-      supabase.from("ai_agent_eval_runs").select("id,status,case_count,passed_count,score,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),
+      supabase.from("ai_agent_eval_runs").select("id,status,case_count,passed_count,score,summary,created_at").eq("business_id",business.id).order("created_at",{ascending:false}).limit(10),\n      supabase.from("ai_agent_versions").select("id,version_number,reason,model,created_at").eq("business_id",business.id).order("version_number",{ascending:false}).limit(20),
     ]);
     setAgents((a.data??[]) as Agent[]); setTools((t.data??[]) as Tool[]); setHandoffs((h.data??[]) as Handoff[]);
     setDeployments((d.data??[]) as Deployment[]); setEvolutionRuns((e.data??[]) as EvolutionRun[]);
-    setCandidates((c.data??[]) as Candidate[]); setEvalRuns((er.data??[]) as EvalRun[]);
+    setCandidates((c.data??[]) as Candidate[]); setEvalRuns((er.data??[]) as EvalRun[]); setVersions((v.data??[]) as AgentVersion[]);
     if (!agentId && a.data?.[0]) setAgentId(a.data[0].id);
   };
   useEffect(()=>{ void load(); },[business]);
@@ -174,7 +174,7 @@ export function AIAgentOperations() {
     await load();
   };
 
-  const promoteCandidate = async (id: string) => {
+  const rollbackVersion = async (versionId: string) => {\n    if (busy) return;\n    setBusy(true);\n    try {\n      const { error } = await supabase.rpc("rollback_ai_agent_version", { p_version_id: versionId });\n      if (error) console.error("[agent-version]", error.message);\n      await load();\n    } finally { setBusy(false); }\n  };\n\n  const promoteCandidate = async (id: string) => {
     if (!business) return;
     const { error } = await supabase.rpc("promote_ai_improvement_candidate", { p_candidate_id:id });
     if (!error) await load();
