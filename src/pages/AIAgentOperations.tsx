@@ -31,6 +31,7 @@ export function AIAgentOperations() {
   const [busy, setBusy] = useState(false);
   const [evolutionBusy, setEvolutionBusy] = useState(false);
   const [evaluationBusy, setEvaluationBusy] = useState(false);
+  const [scheduleBusy, setScheduleBusy] = useState(false);
 
   const load = async () => {
     if (!business) return;
@@ -70,6 +71,23 @@ export function AIAgentOperations() {
     }).select("id,agent_id,reason,status,notes").single();
     if (data) setHandoffs(x=>[data as Handoff,...x]);
     setBusy(false);
+  };
+
+  const enableDailyEvolution = async () => {
+    if (!business || !agentId || scheduleBusy) return;
+    setScheduleBusy(true);
+    try {
+      const next = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      await supabase.from("ai_agent_schedules").insert({
+        business_id: business.id, agent_id: agentId, name: "Daily AI evolution", cron: "daily",
+        prompt: "Review public AI/model updates and create evidence-backed improvement candidates.",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+        enabled: true, interval_minutes: 1440, next_run_at: next,
+      });
+    } finally {
+      setScheduleBusy(false);
+      await load();
+    }
   };
 
   const runEvolution = async () => {
@@ -158,6 +176,7 @@ export function AIAgentOperations() {
         </section>
         <section className="card p-5 lg:col-span-2">
           <div className="flex items-center justify-between"><div><h2 className="font-semibold">Continuous AI evolution</h2><p className="text-xs text-gray-500">Discover public AI updates, record evidence, evaluate and promote only reviewed changes.</p></div><button className="btn-primary" onClick={()=>void runEvolution()} disabled={evolutionBusy||!agentId}><Rocket size={14}/>{evolutionBusy?"Queued...":"Run trainer"}</button></div>
+          <div className="mt-4 flex gap-2"><button className="btn-secondary" onClick={()=>void enableDailyEvolution()} disabled={scheduleBusy||!agentId}><CalendarClock size={14}/>{scheduleBusy?"Enabling...":"Enable daily evolution"}</button></div>
           <div className="mt-4 grid gap-2 md:grid-cols-2">{evolutionRuns.slice(0,6).map(r=><div key={r.id} className="rounded-xl border p-3 dark:border-gray-800"><div className="flex justify-between text-sm"><span>{r.trigger} · {r.status}</span><span>{r.candidates_created} candidates</span></div><p className="mt-1 text-xs text-gray-500">{r.summary}</p></div>)}</div>
           <div className="mt-4 space-y-2">{candidates.filter(c=>c.approval_status!=="rejected").slice(0,8).map(c=><div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 dark:border-gray-800"><div><p className="text-sm font-medium">{c.title}</p><p className="text-xs text-gray-500">{c.improvement_type} · {c.risk_level} · {c.approval_status}</p></div><div className="flex gap-2">{c.approval_status==="pending"&&<><button className="btn-secondary" onClick={()=>void reviewCandidate(c.id,"rejected")}>Reject</button><button className="btn-primary" onClick={()=>void reviewCandidate(c.id,"approved")}>Approve</button></>}{c.approval_status==="approved"&&c.regression_passed&&<button className="btn-primary" onClick={()=>void promoteCandidate(c.id)}>Promote</button>}</div></div>)}</div>
         </section>
