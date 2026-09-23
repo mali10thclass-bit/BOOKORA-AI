@@ -67,43 +67,29 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         ])
       : [{ data: [] as { memory_type: string; content: string; confidence: number | null }[], error: null }, { data: [] as { role: string; content: string }[], error: null }];
 
-    const [bookingsRes, servicesRes, staffRes, customersRes, knowledgeRes] = await Promise.all([
-      supabase
-        .from("bookings")
-        .select(
-          "start_time, end_time, status, payment_status, price, service:services(name), staff:staff(name), customer:customers(name)",
-        )
-        .eq("business_id", businessId)
-        .order("start_time", { ascending: false })
-        .limit(500),
-      supabase
-        .from("services")
-        .select("name, price, duration_minutes, is_active, category")
-        .eq("business_id", businessId)
-        .limit(200),
-      supabase
-        .from("staff")
-        .select("name, role, is_active")
-        .eq("business_id", businessId)
-        .limit(200),
-      supabase.from("customers").select("id").eq("business_id", businessId).limit(2000),
+    const [snapshotRes, knowledgeRes, agentRes] = await Promise.all([
+      supabase.rpc("ai_business_snapshot", { p_business_id: businessId, p_question: data.question }),
       supabase.rpc("search_ai_knowledge_text", {
         p_business_id: businessId,
         p_query: data.question,
         p_match_count: 8,
       }),
+      data.agentId
+        ? supabase
+            .from("ai_agents")
+            .select("name,role,system_prompt,model,capabilities,config,status")
+            .eq("business_id", businessId)
+            .eq("id", data.agentId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
-    const queryError = memoryRes.error ?? historyRes.error ?? bookingsRes.error ?? servicesRes.error ?? staffRes.error ?? customersRes.error ?? knowledgeRes.error;
+    const queryError = memoryRes.error ?? historyRes.error ?? snapshotRes.error ?? knowledgeRes.error ?? agentRes.error;
     if (queryError) {
       console.error("[assistant] data query failed", queryError.message);
       return { answer: null, error: "I could not read your business data just now." };
     }
 
-    const bookings = bookingsRes.data;
-    const services = servicesRes.data;
-    const staff = staffRes.data;
-    const customers = customersRes.data;
     const knowledge = (knowledgeRes.data ?? []).map((item) => ({
       sourceId: item.source_id,
       content: item.content,
@@ -111,49 +97,22 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       metadata: item.metadata,
     }));
 
-    const rows = bookings ?? [];
-    const paid = rows.filter((b) => b.payment_status === "paid");
-    const revenue = paid.reduce((sum, b) => sum + Number(b.price ?? 0), 0);
-    const outstanding = rows
-      .filter((b) => b.payment_status !== "paid" && b.status !== "cancelled")
-      .reduce((sum, b) => sum + Number(b.price ?? 0), 0);
-
-    const byStatus = rows.reduce<Record<string, number>>((acc, b) => {
-      const key = b.status ?? "unknown";
-      acc[key] = (acc[key] ?? 0) + 1;
-      return acc;
-    }, {});
-
     const snapshot = {
-      business: {
-        name: business.name,
-        currency: business.currency ?? "USD",
-        timezone: business.timezone ?? "UTC",
-      },
-      today: new Date().toISOString(),
-      totals: {
-        bookings: rows.length,
-        customers: customers?.length ?? 0,
-        services: services?.length ?? 0,
-        staff: staff?.length ?? 0,
-        paidBookings: paid.length,
-        revenuePaid: Number(revenue.toFixed(2)),
-        outstandingBalance: Number(outstanding.toFixed(2)),
-        byStatus,
-      },
-      services: services ?? [],
-      staff: staff ?? [],
-      agentMemory: (memoryRes.data ?? []).map((m) => ({ type: m.memory_type, content: m.content, confidence: m.confidence })).slice(0, 40),
+      ...((snapshotRes.data ?? {}) as Record<string, unknown>),
+      agentMemory: (memoryRes.data ?? [])
+        .map((m) => ({ type: m.memory_type, content: m.content, confidence: m.confidence }))
+        .slice(0, 40),
       recentConversation: [...(historyRes.data ?? [])].reverse().slice(-20),
-      recentBookings: rows.slice(0, 120).map((b) => ({
-        start: b.start_time,
-        status: b.status,
-        payment: b.payment_status,
-        price: Number(b.price ?? 0),
-        service: (b as { service?: { name?: string } | null }).service?.name ?? null,
-        staff: (b as { staff?: { name?: string } | null }).staff?.name ?? null,
-        customer: (b as { customer?: { name?: string } | null }).customer?.name ?? null,
-      })),
+      retrievedKnowledge: knowledge,
+      activeAgent: agentRes.data
+        ? {
+            name: agentRes.data.name,
+            role: agentRes.data.role,
+            systemPrompt: agentRes.data.system_prompt,
+            capabilities: agentRes.data.capabilities,
+            config: agentRes.data.config,
+          }
+        : null,
     };
 
     const { createLovableResponsesProvider } = await import("./ai-gateway.server");
@@ -173,8 +132,8 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         },
         system: [
           "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
-          "Answer strictly from the JSON business snapshot, retrieved business knowledge, approved agent memory, and recent conversation given in the user message.",
-          "Never invent numbers or policies. If the provided snapshot/knowledge does not contain the answer, say so plainly.",
+          "Answer strictly from the JSON business snapshot, retrieved business knowledge, approved agent memory, active agent instructions, and recent conversation given in the user message.",
+          "Never invent numbers, policies, availability, customer details, or actions. If evidence is missing or conflicting, say so plainly. Never claim an action was completed unless a verified tool result says it was completed.",
           "Be concise: short paragraphs or small bullet lists, with concrete numbers and the business currency.",
           `Reply only in ${language}.`,
         ].join(" "),
