@@ -119,7 +119,8 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
     };
 
     const { createLovableResponsesProvider } = await import("./ai-gateway.server");
-    const lovable = createLovableResponsesProvider(apiKey);\n    const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : "openai/gpt-6-astra";
+    const lovable = createLovableResponsesProvider(apiKey);
+    const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : "openai/gpt-6-astra";
     const language = LANGUAGE_NAMES[data.language] ?? "English";
 
     try {
@@ -143,7 +144,10 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         messages: [
           {
             role: "user",
-            content: `Business data snapshot (JSON):\n${JSON.stringify(snapshot)}\n\nQuestion: ${data.question}`,
+            content: `Business data snapshot (JSON):
+${JSON.stringify(snapshot)}
+
+Question: ${data.question}`,
           },
         ],
       });
