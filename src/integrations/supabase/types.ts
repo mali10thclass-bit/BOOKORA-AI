@@ -1131,6 +1131,36 @@ export type Database = {
         Update: { channel?: string; public_key?: string | null; settings?: Json; enabled?: boolean; updated_at?: string; };
         Relationships: [];
       };
+      ai_model_catalog: {
+        Row: { id: string; provider: string; model_key: string; runtime_model: string | null; runtime_compatible: boolean; display_name: string; capabilities: Json; context_window: number | null; status: string; source_url: string | null; evidence: Json; discovered_at: string; last_seen_at: string; updated_at: string; };
+        Insert: { id?: string; provider: string; model_key: string; runtime_model?: string | null; runtime_compatible?: boolean; display_name: string; capabilities?: Json; context_window?: number | null; status?: string; source_url?: string | null; evidence?: Json; discovered_at?: string; last_seen_at?: string; updated_at?: string; };
+        Update: { runtime_model?: string | null; runtime_compatible?: boolean; display_name?: string; capabilities?: Json; context_window?: number | null; status?: string; source_url?: string | null; evidence?: Json; last_seen_at?: string; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_trainer_sources: {
+        Row: { id: string; name: string; source_type: string; source_url: string; trust_level: string; enabled: boolean; fetch_interval_minutes: number; last_fetched_at: string | null; last_http_status: number | null; content_digest: string | null; last_title: string | null; last_excerpt: string | null; metadata: Json; created_at: string; updated_at: string; };
+        Insert: { id?: string; name: string; source_type: string; source_url: string; trust_level?: string; enabled?: boolean; fetch_interval_minutes?: number; last_fetched_at?: string | null; last_http_status?: number | null; content_digest?: string | null; last_title?: string | null; last_excerpt?: string | null; metadata?: Json; };
+        Update: { name?: string; source_type?: string; source_url?: string; trust_level?: string; enabled?: boolean; fetch_interval_minutes?: number; last_fetched_at?: string | null; last_http_status?: number | null; content_digest?: string | null; last_title?: string | null; last_excerpt?: string | null; metadata?: Json; updated_at?: string; };
+        Relationships: [];
+      };
+      ai_evolution_runs: {
+        Row: { id: string; business_id: string | null; agent_id: string | null; status: string; trigger: string; sources_scanned: number; models_discovered: number; candidates_created: number; summary: string | null; error: string | null; started_at: string | null; completed_at: string | null; created_at: string; };
+        Insert: { id?: string; business_id?: string | null; agent_id?: string | null; status?: string; trigger?: string; sources_scanned?: number; models_discovered?: number; candidates_created?: number; summary?: string | null; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Update: { status?: string; summary?: string | null; error?: string | null; started_at?: string | null; completed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_improvement_candidates: {
+        Row: { id: string; business_id: string | null; agent_id: string | null; evolution_run_id: string | null; improvement_type: string; title: string; proposal: Json; evidence: Json; risk_level: string; baseline_score: number | null; candidate_score: number | null; regression_passed: boolean; approval_status: string; created_at: string; reviewed_at: string | null; };
+        Insert: { id?: string; business_id?: string | null; agent_id?: string | null; evolution_run_id?: string | null; improvement_type: string; title: string; proposal?: Json; evidence?: Json; risk_level?: string; baseline_score?: number | null; candidate_score?: number | null; regression_passed?: boolean; approval_status?: string; created_at?: string; reviewed_at?: string | null; };
+        Update: { title?: string; proposal?: Json; evidence?: Json; risk_level?: string; baseline_score?: number | null; candidate_score?: number | null; regression_passed?: boolean; approval_status?: string; reviewed_at?: string | null; };
+        Relationships: [];
+      };
+      ai_agent_eval_cases: {
+        Row: { id: string; business_id: string; agent_id: string; name: string; input: string; expected_criteria: Json; enabled: boolean; created_at: string; };
+        Insert: { id?: string; business_id: string; agent_id: string; name: string; input: string; expected_criteria?: Json; enabled?: boolean; };
+        Update: { name?: string; input?: string; expected_criteria?: Json; enabled?: boolean; };
+        Relationships: [];
+      };
     Views: {
       [_ in never]: never;
     };
