@@ -32,6 +32,7 @@ import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
 import { Route as AiAgentStudioRouteImport } from './routes/ai-agent-studio'
+import { Route as AiAgentOperationsRouteImport } from './routes/ai-agent-operations'
 import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
 import { Route as BusinessOsRouteImport } from './routes/business-os'
 
@@ -109,7 +110,12 @@ const AiAgentStudioRoute = AiAgentStudioRouteImport.update({
   id: '/ai-agent-studio',
   path: '/ai-agent-studio',
   getParentRoute: () => rootRouteImport,
+} as any)const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
+  id: '/ai-agent-operations',
+  path: '/ai-agent-operations',
+  getParentRoute: () => rootRouteImport,
 } as any)
+
 const AutomationsRoute = AutomationsRouteImport.update({
   id: '/automations',
   path: '/automations',
