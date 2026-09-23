@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
 import { BookOpen, FileText, Globe, Plus, RefreshCw, Trash2, Sparkles, Play, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
