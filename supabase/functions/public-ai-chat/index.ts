@@ -17,6 +17,8 @@ Deno.serve(async (req) => {
     const hash = await sha256(key);
     const { data: deployment } = await admin.from("ai_agent_deployments").select("id,business_id,agent_id,channel,allowed_origins,rate_limit_per_minute,public_system_prompt,enabled").eq("public_key_hash", hash).eq("enabled", true).in("channel", ["public_web", "embed"]).maybeSingle();
     if (!deployment) return new Response(JSON.stringify({ error: "Invalid or disabled deployment" }), { status: 401, headers: headers(origin) });
+    const { data: planAllowed } = await admin.rpc("bookora_plan_allows_feature", { b_id: deployment.business_id, feature_key: "public_ai_chat" });
+    if (!planAllowed) return new Response(JSON.stringify({ error: "Public AI Chat is not enabled for this plan." }), { status: 402, headers: headers(origin) });
     const allowed = (deployment.allowed_origins ?? []) as string[];
     if (allowed.length && origin && !allowed.includes(origin)) return new Response(JSON.stringify({ error: "Origin is not allowed" }), { status: 403, headers: headers(origin) });
     const { data: allowedNow } = await admin.rpc("consume_public_ai_rate_limit", { p_deployment_id: deployment.id, p_limit: deployment.rate_limit_per_minute ?? 30 });
