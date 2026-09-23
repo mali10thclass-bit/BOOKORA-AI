@@ -109,6 +109,8 @@ Deno.serve(async (req: Request) => {
         }
 
         const { error: candidateError } = await admin.from("ai_improvement_candidates").insert({
+          business_id: run.business_id,
+          agent_id: run.agent_id,
           evolution_run_id: run.id,
           improvement_type: "knowledge",
           title: `Review update from ${source.name}`,
