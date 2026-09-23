@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
 
   if (sourceError) return Response.json({ error: sourceError.message }, { status: 500 })
 
-  const { data: run, error: runError } = await admin
+  const { data: queuedRun, error: runError } = await admin
     .from("ai_evolution_runs")
     .select("id,business_id,agent_id,trigger")
     .eq("status", "queued")
@@ -58,9 +58,17 @@ Deno.serve(async (req: Request) => {
     .limit(1)
     .maybeSingle()
 
-  if (runError || !run) return Response.json({ processed: 0, message: runError?.message ?? "No queued evolution run" })
+  if (runError || !queuedRun) return Response.json({ processed: 0, message: runError?.message ?? "No queued evolution run" })
 
-  await admin.from("ai_evolution_runs").update({ status: "running", started_at: new Date().toISOString() }).eq("id", run.id)
+  const { data: run, error: claimError } = await admin
+    .from("ai_evolution_runs")
+    .update({ status: "running", started_at: new Date().toISOString() })
+    .eq("id", queuedRun.id)
+    .eq("status", "queued")
+    .select("id,business_id,agent_id,trigger")
+    .maybeSingle()
+
+  if (claimError || !run) return Response.json({ processed: 0, message: "Run was claimed by another worker" })
 
   let changed = 0
   let models = 0
