@@ -24,8 +24,6 @@ import {
   Box,
   MessageSquare,
   BrainCircuit,
-  Workflow,
-  Code2,
 } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { useAuth } from "@/context/AuthContext";
@@ -94,7 +92,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           external: true,
         },
         { to: "/notifications", icon: Bell, label: t("notifications") },
-        { to: "/reviews", icon: MessageSquare, label: "Reputation" },
       ],
     },
     {
