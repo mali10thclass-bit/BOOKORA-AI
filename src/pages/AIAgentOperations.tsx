@@ -135,11 +135,24 @@ export function AIAgentOperations() {
   const deploy = async (channel: "dashboard"|"public_web"|"embed"|"api"|"workflow") => {
     if (!business || !agentId || busy) return;
     setBusy(true);
-    const { data } = await supabase.from("ai_agent_deployments").insert({
-      business_id: business.id, agent_id: agentId, channel, enabled: channel === "dashboard", settings: {},
-    }).select("id,agent_id,channel,public_key,enabled").single();
-    if (data) setDeployments(x=>[data as Deployment,...x]);
-    setBusy(false);
+    try {
+      if (channel === "public_web" || channel === "embed") {
+        const { data, error } = await supabase.rpc("create_public_ai_deployment", {
+          p_business_id: business.id, p_agent_id: agentId, p_channel: channel, p_allowed_origins: [],
+        });
+        if (!error && data) {
+          const payload = data as { deployment_id: string; public_key: string; public_key_prefix: string };
+          setDeployments(x => [{ id: payload.deployment_id, agent_id: agentId, channel, public_key: payload.public_key_prefix, enabled: true }, ...x]);
+          window.prompt("Copy this public deployment key now. It is only returned once.", payload.public_key);
+        }
+      } else {
+        const { data } = await supabase.from("ai_agent_deployments").insert({
+          business_id: business.id, agent_id: agentId, channel, enabled: channel === "dashboard", settings: {},
+        }).select("id,agent_id,channel,public_key,enabled").single();
+        if (data) setDeployments(x=>[data as Deployment,...x]);
+      }
+      await load();
+    } finally { setBusy(false); }
   };
 
   return <PlanGate minimumPlan="pro" featureName="AI Agent Operations">
