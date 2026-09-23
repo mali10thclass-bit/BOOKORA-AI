@@ -71,8 +71,9 @@ Deno.serve(async (req: Request) => {
         })
         const html = await response.text()
         const text = extractText(html).slice(0, 12000)
+        const previousDigest = source.content_digest
         const hash = await digest(text)
-        const isChanged = hash !== source.content_digest
+        const isChanged = hash !== previousDigest
         const title = text.slice(0, 220)
 
         await admin.from("ai_trainer_sources").update({
@@ -114,7 +115,7 @@ Deno.serve(async (req: Request) => {
           },
           evidence: {
             digest: hash,
-            previousDigest: source.content_digest,
+            previousDigest,
             excerpt: text.slice(0, 2500),
           },
           risk_level: "low",
