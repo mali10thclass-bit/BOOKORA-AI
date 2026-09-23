@@ -1,1 +1,10 @@
 project_id = "dnnovppwzmhwjhjttfoi"
+
+[functions.embed-knowledge]
+verify_jwt = false
+
+[functions.automation-worker]
+verify_jwt = false
+
+[functions.webhook-worker]
+verify_jwt = false
