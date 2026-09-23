@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
 
       await admin
         .from("automation_runs")
-        .update({ status: "completed", output: { steps: outputs }, finished_at: new Date().toISOString() })
+        .update({ status: "completed", output: { steps: outputs }, completed_at: new Date().toISOString() })
         .eq("id", run.id)
 
       results.push({ id: run.id, status: "completed", claimed })
