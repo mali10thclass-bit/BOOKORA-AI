@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Code2, KeyRound, Plus, RefreshCw, Trash2, Webhook } from "lucide-react";
+import { Code2, KeyRound, Plus, Trash2, Webhook } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
