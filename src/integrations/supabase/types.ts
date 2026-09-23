@@ -695,6 +695,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      crm_leads: {
+        Row: { id: string; business_id: string; name: string; source: string; status: string; value: number; created_at: string };
+        Insert: { business_id: string; name: string; source?: string; status?: string; value?: number; };
+        Update: { business_id?: string; name?: string; source?: string; status?: string; value?: number; };
+        Relationships: [];
+      };
+      business_tasks: {
+        Row: { id: string; business_id: string; title: string; priority: string; status: string; due_at: string | null; created_at: string };
+        Insert: { business_id: string; title: string; priority?: string; status?: string; due_at?: string | null; };
+        Update: { business_id?: string; title?: string; priority?: string; status?: string; due_at?: string | null; };
+        Relationships: [];
+      };
+      inventory_products: {
+        Row: { id: string; business_id: string; name: string; sku: string | null; quantity: number; reorder_level: number; unit: string; created_at: string };
+        Insert: { business_id: string; name: string; sku?: string | null; quantity?: number; reorder_level?: number; unit?: string; };
+        Update: { business_id?: string; name?: string; sku?: string | null; quantity?: number; reorder_level?: number; unit?: string; };
+        Relationships: [];
+      };
+      support_tickets: {
+        Row: { id: string; business_id: string; subject: string; priority: string; status: string; channel: string; created_at: string };
+        Insert: { business_id: string; subject: string; priority?: string; status?: string; channel?: string; };
+        Update: { business_id?: string; subject?: string; priority?: string; status?: string; channel?: string; };
+        Relationships: [];
+      };
+      marketing_campaigns: {
+        Row: { id: string; business_id: string; name: string; channel: string; status: string; created_at: string };
+        Insert: { business_id: string; name: string; channel?: string; status?: string; };
+        Update: { business_id?: string; name?: string; channel?: string; status?: string; };
+        Relationships: [];
+      };
       ai_knowledge_sources: {
         Row: {
           id: string;
@@ -821,6 +851,7 @@ export type Database = {
           body: string|null;
           source: string;
           status: string;
+          response: string | null;
           created_at: string;
         };
         Insert: {
@@ -831,6 +862,7 @@ export type Database = {
           body?: string|null;
           source?: string;
           status?: string;
+          response?: string | null;
         };
         Update: {
           business_id?: string;
@@ -840,6 +872,7 @@ export type Database = {
           body?: string|null;
           source?: string;
           status?: string;
+          response?: string | null;
         };
         Relationships: [];
       };
