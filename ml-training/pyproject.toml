@@ -1,0 +1,20 @@
+[project]
+name = "bookora-ai-ml-training"
+version = "0.1.0"
+description = "Isolated Unsloth fine-tuning worker for BOOKORA AI agents"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "datasets>=3,<5",
+  "huggingface-hub>=0.30,<2",
+  "safetensors>=0.5,<1",
+  "supabase>=2,<3",
+  "torch>=2.5,<3",
+  "transformers>=4.50,<6",
+  "trl>=0.18,<1",
+  "unsloth",
+]
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "ruff>=0.11,<1"]
+[tool.ruff]
+line-length = 100
+target-version = "py310"
