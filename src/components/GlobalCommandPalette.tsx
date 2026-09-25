@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import { useNavigate } from "@/lib/router-compat";
+import { useAuth } from "@/context/AuthContext";
 import {
   BarChart3,
   Bot,
@@ -22,6 +23,7 @@ type CommandItem = {
   keywords: string;
   to: string;
   icon: typeof Search;
+  external?: boolean;
 };
 
 const ITEMS: CommandItem[] = [
@@ -40,6 +42,7 @@ const ITEMS: CommandItem[] = [
 
 export function GlobalCommandPalette() {
   const navigate = useNavigate();
+  const { business } = useAuth();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -58,18 +61,35 @@ export function GlobalCommandPalette() {
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return ITEMS;
-    return ITEMS.filter(
+    const items = business?.slug
+      ? [
+          ...ITEMS,
+          {
+            id: "public-booking",
+            label: "Public Booking Page",
+            keywords: "share booking link customer appointments online",
+            to: `/book/${business.slug}`,
+            icon: CalendarDays,
+            external: true,
+          },
+        ]
+      : ITEMS;
+    if (!normalized) return items;
+    return items.filter(
       (item) =>
         item.label.toLowerCase().includes(normalized) ||
         item.keywords.toLowerCase().includes(normalized),
     );
   }, [query]);
 
-  const go = (to: string) => {
+  const go = (item: CommandItem) => {
     setOpen(false);
     setQuery("");
-    navigate(to);
+    if (item.external) {
+      window.open(item.to, "_blank", "noopener,noreferrer");
+      return;
+    }
+    navigate(item.to);
   };
 
   return (
@@ -136,7 +156,7 @@ export function GlobalCommandPalette() {
                       <Command.Item
                         key={item.id}
                         value={`${item.label} ${item.keywords}`}
-                        onSelect={() => go(item.to)}
+                        onSelect={() => go(item)}
                         className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none data-[selected=true]:bg-primary-50 data-[selected=true]:text-primary-700 dark:text-gray-200 dark:data-[selected=true]:bg-primary-900/20 dark:data-[selected=true]:text-primary-300"
                       >
                         <Icon size={17} />
