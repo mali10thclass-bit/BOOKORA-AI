@@ -1,6 +1,6 @@
 const { app, BrowserWindow, shell, session } = require("electron");
 const DEFAULT_URL = "https://bookora-ai.vercel.app";
-const target = process.env.BOOKORA_WEB_URL || process.argv.find((v) => /^https?:\\/\\//i.test(v)) || DEFAULT_URL;
+const target = process.env.BOOKORA_WEB_URL || process.argv.find((v) => /^https?:\/\//i.test(v)) || DEFAULT_URL;
 function validUrl(value) { try { const url = new URL(value); return url.protocol === "https:" || url.protocol === "http:"; } catch { return false; } }
 if (!validUrl(target)) throw new Error("BOOKORA_WEB_URL must be an http(s) URL");
 function createWindow() {
