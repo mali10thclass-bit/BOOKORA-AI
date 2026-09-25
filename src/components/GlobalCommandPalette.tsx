@@ -3,6 +3,7 @@ import { Command } from "cmdk";
 import { useNavigate } from "@/lib/router-compat";
 import {
   BarChart3,
+  Bot,
   Calendar,
   CalendarDays,
   CreditCard,
@@ -31,6 +32,7 @@ const ITEMS: CommandItem[] = [
   { id: "services", label: "Services", keywords: "products offerings", to: "/services", icon: Sparkles },
   { id: "staff", label: "Staff", keywords: "team employees", to: "/staff", icon: UserCog },
   { id: "analytics", label: "Analytics", keywords: "reports metrics insights", to: "/analytics", icon: BarChart3 },
+  { id: "ai-assistant", label: "AI Assistant", keywords: "copilot ai business data chat", to: "/ai-assistant", icon: Bot },
   { id: "notifications", label: "Notifications", keywords: "alerts reminders", to: "/notifications", icon: Bell },
   { id: "plans", label: "Plans & Billing", keywords: "subscription upgrade billing", to: "/plans", icon: CreditCard },
   { id: "settings", label: "Settings", keywords: "business configuration preferences", to: "/settings", icon: Settings },
@@ -83,6 +85,16 @@ export function GlobalCommandPalette() {
         <kbd className="rounded border border-gray-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-gray-400 dark:border-gray-700 dark:bg-gray-900">
           Ctrl K
         </kbd>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 md:hidden dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+        aria-label="Search BOOKORA"
+        title="Search BOOKORA"
+      >
+        <Search size={18} />
       </button>
 
       {open && (
