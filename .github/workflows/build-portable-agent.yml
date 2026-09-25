@@ -33,11 +33,14 @@ jobs:
       - name: Install desktop dependencies
         run: npm install
       - name: Build portable EXE
-        run: npm run build:portable
+        run: npm run build:windows
       - name: Upload portable EXE
         uses: actions/upload-artifact@v4
         with:
-          name: BOOKORA-AI-Portable-Windows
-          path: desktop-agent/dist/*.exe
+          name: BOOKORA-AI-Windows-Builds
+          path: |
+            desktop-agent/dist/*.exe
+            desktop-agent/dist/*.yml
+            desktop-agent/dist/*.blockmap
           if-no-files-found: error
           retention-days: 30
