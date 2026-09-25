@@ -1,0 +1,13 @@
+-- Performance indexes for AI control-plane foreign keys.
+create index if not exists ai_finetune_datasets_created_by_idx on public.ai_finetune_datasets(created_by);
+create index if not exists ai_finetune_jobs_agent_idx on public.ai_finetune_jobs(agent_id);
+create index if not exists ai_finetune_jobs_dataset_idx on public.ai_finetune_jobs(dataset_id);
+create index if not exists ai_messages_business_idx on public.ai_messages(business_id);
+create index if not exists ai_generation_jobs_agent_idx on public.ai_generation_jobs(agent_id);
+create index if not exists ai_generation_jobs_user_idx on public.ai_generation_jobs(user_id);
+create index if not exists ai_improvement_candidates_business_idx on public.ai_improvement_candidates(business_id);
+create index if not exists ai_improvement_candidates_evolution_run_idx on public.ai_improvement_candidates(evolution_run_id);
+create index if not exists ai_knowledge_refresh_jobs_business_idx on public.ai_knowledge_refresh_jobs(business_id);
+create index if not exists ai_model_benchmark_results_model_idx on public.ai_model_benchmark_results(model_id);
+create index if not exists ai_model_benchmark_runs_model_idx on public.ai_model_benchmark_runs(model_id);
+create index if not exists ai_training_runs_business_idx on public.ai_training_runs(business_id);
