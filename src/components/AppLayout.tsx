@@ -26,6 +26,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useI18n } from "@/context/I18nContext";
 import { languageNames, type Language } from "@/lib/i18n";
+import { GlobalCommandPalette } from "@/components/GlobalCommandPalette";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { business, membership, signOut } = useAuth();
@@ -226,7 +227,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <GlobalCommandPalette />
+            <div className="flex items-center gap-1">
             {/* Notifications */}
             <Link
               to="/notifications"
@@ -282,6 +285,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
             </button>
+            </div>
           </div>
         </header>
 
