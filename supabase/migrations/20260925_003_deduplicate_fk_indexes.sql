@@ -1,0 +1,41 @@
+-- Performance cleanup: cover the final application FK and remove redundant duplicate indexes.
+create index if not exists ai_evolution_runs_agent_id_idx
+  on public.ai_evolution_runs(agent_id);
+
+drop index if exists public.ai_agent_eval_results_run_id_fk_idx;
+drop index if exists public.ai_finetune_datasets_created_by_fk_idx;
+drop index if exists public.ai_finetune_jobs_agent_id_fk_idx;
+drop index if exists public.ai_finetune_jobs_dataset_id_fk_idx;
+drop index if exists public.ai_generation_jobs_agent_id_fk_idx;
+drop index if exists public.ai_generation_jobs_user_id_fk_idx;
+drop index if exists public.ai_improvement_candidates_business_id_fk_idx;
+drop index if exists public.ai_improvement_candidates_evolution_run_id_fk_idx;
+drop index if exists public.ai_knowledge_refresh_jobs_business_id_fk_idx;
+drop index if exists public.ai_messages_business_id_fk_idx;
+drop index if exists public.ai_model_benchmark_results_model_id_fk_idx;
+drop index if exists public.ai_model_benchmark_runs_model_id_fk_idx;
+drop index if exists public.ai_model_comparisons_model_idx;
+drop index if exists public.ai_public_rate_limits_deployment_id_fk_idx;
+drop index if exists public.ai_training_runs_business_id_fk_idx;
+drop index if exists public.audit_logs_business_id_fk_idx;
+drop index if exists public.bookings_business_id_fk_idx;
+drop index if exists public.bookings_customer_id_fk_idx;
+drop index if exists public.bookings_location_id_fk_idx;
+drop index if exists public.bookings_service_id_fk_idx;
+drop index if exists public.bookings_staff_id_fk_idx;
+drop index if exists public.business_members_business_id_fk_idx;
+drop index if exists public.businesses_created_by_fk_idx;
+drop index if exists public.customers_business_id_fk_idx;
+drop index if exists public.idx_holidays_business_date;
+drop index if exists public.locations_business_id_fk_idx;
+drop index if exists public.notifications_booking_id_fk_idx;
+drop index if exists public.notifications_business_id_fk_idx;
+drop index if exists public.payments_booking_id_fk_idx;
+drop index if exists public.payments_business_id_fk_idx;
+drop index if exists public.services_business_id_fk_idx;
+drop index if exists public.staff_business_id_fk_idx;
+drop index if exists public.waitlist_entries_business_id_fk_idx;
+drop index if exists public.waitlist_entries_customer_id_fk_idx;
+drop index if exists public.waitlist_entries_service_id_fk_idx;
+drop index if exists public.waitlist_entries_staff_id_fk_idx;
+drop index if exists public.working_hours_staff_id_fk_idx;

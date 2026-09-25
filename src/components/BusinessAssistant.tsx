@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, Sparkles, Trash2 } from "lucide-react";
 import { askBusinessAssistant } from "@/lib/assistant.functions";
 import { useI18n } from "@/context/I18nContext";
 import { useAuth } from "@/context/AuthContext";
@@ -58,6 +58,7 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const greeting = GREETING[lang] ?? GREETING["en"]!;
@@ -75,6 +76,7 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
     const content = (text ?? input).trim();
     if (!content || loading) return;
     setInput("");
+    setShowSuggestions(false);
     setMessages((m) => [...m, { role: "user", content }]);
     setLoading(true);
     try {
@@ -93,6 +95,12 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
     }
   };
 
+  const clearChat = () => {
+    setMessages([{ role: "assistant", content: greeting }]);
+    setInput("");
+    setShowSuggestions(true);
+  };
+
   return (
     <div className="card p-4 flex flex-col gap-3" dir={dir}>
       <div className="flex items-center gap-2">
@@ -101,7 +109,16 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
         </div>
         <div>
           <h2 className="text-sm font-semibold">AI business assistant</h2>
-          <p className="text-xs text-gray-500">
+          <div className="flex items-center gap-2 ml-auto">
+            <Sparkles size={14} className="text-primary-500" />
+            {!compact && messages.length > 1 && (
+              <button onClick={clearChat} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Clear conversation" title="Clear conversation">
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">
             {business?.name
               ? `Answers from ${business.name}'s own data`
               : "Answers from your own data"}
@@ -145,7 +162,7 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
         )}
       </div>
 
-      {messages.length <= 1 && (
+      {showSuggestions && messages.length <= 1 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {suggestions.map((s, i) => (
             <button
@@ -162,6 +179,7 @@ export function BusinessAssistant({ compact = false }: { compact?: boolean }) {
       <div className="flex gap-2">
         <input
           className="input flex-1"
+          aria-label="Ask BOOKORA AI"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send()}

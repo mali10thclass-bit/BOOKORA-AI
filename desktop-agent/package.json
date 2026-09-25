@@ -1,0 +1,50 @@
+{
+  "name": "bookora-ai-desktop",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Portable Windows desktop shell for BOOKORA AI",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build:portable": "electron-builder --win portable --x64",
+    "build:windows": "electron-builder --win nsis portable --x64"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "ai.bookora.desktop",
+    "productName": "BOOKORA AI",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "README.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "BOOKORA-AI-Portable-${version}-${arch}.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BOOKORA AI"
+    },
+    "artifactName": "BOOKORA-AI-${version}-${os}-${arch}.${ext}"
+  }
+}

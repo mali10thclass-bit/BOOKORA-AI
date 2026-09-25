@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/context/I18nContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState } from "@/components/EmptyState";
+import { DashboardCopilotCard } from "@/components/DashboardCopilotCard";
 import {
   formatCurrency,
   formatDate,
@@ -198,6 +199,8 @@ export function Dashboard() {
           </div>
         </div>
       </section>
+
+      <DashboardCopilotCard />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => {
