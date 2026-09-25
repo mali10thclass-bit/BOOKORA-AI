@@ -1,17 +1,36 @@
-# BOOKORA AI Portable Windows App
+# BOOKORA AI Windows Desktop
 
-This folder builds BOOKORA AI as a portable Windows x64 EXE using Electron.
+BOOKORA AI remains a web-first SaaS/PWA. This desktop package provides two Windows x64 distributions of the same application:
 
-Build on Windows:
+- **Portable EXE** — run without installation.
+- **NSIS Installer** — normal Windows installation with Start Menu/Desktop shortcuts.
+
+## Build locally
+
+PowerShell:
+
+```powershell
 npm install
-npm run build:portable
+npm run build:windows
+```
 
-The generated executable is placed in the dist folder.
+Artifacts are written to `dist/`.
 
-The shell loads the deployed BOOKORA web application. It does not embed Supabase service credentials or run a local privileged backend.
+## Run against a deployment
 
-Custom URL:
+Set the web URL before starting:
+
+```powershell
 $env:BOOKORA_WEB_URL="https://your-bookora-domain.example"
-npm run start
+npm start
+```
 
-For production, use an HTTPS deployment URL.
+The desktop shell never contains Supabase service-role credentials. Authentication, tenant isolation, business data, AI tools, and permissions remain controlled by the BOOKORA web application and backend.
+
+## Security
+
+The Electron window uses sandboxing, context isolation, disabled Node integration, disabled webviews, blocked permission requests, and controlled external navigation.
+
+## Important
+
+The repository does not claim a built/released EXE until the Windows GitHub Actions build has actually completed successfully.
