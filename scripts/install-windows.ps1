@@ -23,5 +23,8 @@ if (Get-Command bun -ErrorAction SilentlyContinue) {
   npm run build
 }
 
-Write-Host "Production build completed." -ForegroundColor Green
+bun run env:check
+if ($LASTEXITCODE -ne 0) { throw "Environment validation failed. Configure .env before running BOOKORA AI." }
+
+Write-Host "Production build completed and environment validation passed." -ForegroundColor Green
 Write-Host "Run 'bun run dev' for development or deploy the generated TanStack Start output using your hosting provider." -ForegroundColor Cyan
