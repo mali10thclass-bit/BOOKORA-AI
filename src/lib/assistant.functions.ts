@@ -53,8 +53,9 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       };
     }
 
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) {
+    const runtimeMode = process.env["AI_RUNTIME_MODE"] === "local" ? "local" : "cloud";
+    const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
+    if (runtimeMode === "cloud" && !apiKey) {
       return { answer: null, error: "AI is not configured for this project yet." };
     }
 
@@ -118,22 +119,25 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         : null,
     };
 
-    const { createLovableResponsesProvider } = await import("./ai-gateway.server");
-    const lovable = createLovableResponsesProvider(apiKey);
-    const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : "openai/gpt-6-astra";
+    const { createBusinessAiChatModel, getAiRuntimeMode, getAiRuntimeModel } = await import("./ai-gateway.server");
+    const runtimeMode = getAiRuntimeMode();
+    const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : getAiRuntimeModel();
     const language = LANGUAGE_NAMES[data.language] ?? "English";
 
     try {
       const result = streamText({
-        model: lovable.responses(runtimeModel),
-        providerOptions: {
-          openai: {
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            store: false,
-          },
-        },
+        model: createBusinessAiChatModel(runtimeModel),
+        providerOptions:
+          runtimeMode === "cloud"
+            ? {
+                openai: {
+                  forceReasoning: true,
+                  reasoningEffort: "low",
+                  reasoningSummary: "auto",
+                  store: false,
+                },
+              }
+            : undefined,
         system: [
           "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
           "Answer strictly from the JSON business snapshot, retrieved business knowledge, approved agent memory, active agent instructions, and recent conversation given in the user message.",
