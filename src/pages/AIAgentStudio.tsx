@@ -110,9 +110,9 @@ export function AIAgentStudio() {
   const createFromTemplate=async(t:Template)=>{
     if(!business) return;
     const {data}=await supabase.from("ai_agents").insert({
-      business_id:business.id,name:t.name,description:t.description,role:t.role,status:"active",
-      system_prompt:`You are the BOOKORA ${t.name}. Use the business knowledge, approved tools and business data available to you. Never invent business facts; state uncertainty and request missing information.`,
-      capabilities:t.capabilities,starter_prompts:[`What can you do for my business as a ${t.name}?`,`Give me today's most important actions.`],
+      business_id:business.id,name:t[0],description:t[3],role:t[1],status:"active",
+      system_prompt:`You are the BOOKORA ${t[0]}. Use the business knowledge, approved tools and business data available to you. Never invent business facts; state uncertainty and request missing information.`,
+      capabilities:t[4],starter_prompts:[`What can you do for my business as a ${t[0]}?`,`Give me today's most important actions.`],
       created_by:membership?.user_id??null,
     }).select("id,name,description,role,status,capabilities,starter_prompts").single();
     if(data){setAgents(x=>[data as Agent,...x]);setAgent(data as Agent);setTab("chat");}
@@ -132,7 +132,7 @@ export function AIAgentStudio() {
     if(!error){setPrompt("");alert(`${type} generation job queued. Connect the approved generation provider/worker to produce the final artifact.`);}
   };
 
-  const filtered=useMemo(()=>templates.filter(t=>t.name.toLowerCase().includes(search.toLowerCase())||t.role.includes(search.toLowerCase())),[search]);
+  const filtered=useMemo(()=>templates.filter(t=>t[0].toLowerCase().includes(search.toLowerCase())||t[1].includes(search.toLowerCase())),[search]);
 
   if(!business) return null;
   return <PlanGate minimumPlan="ultimate" featureName="AI Agent Studio">
@@ -162,7 +162,7 @@ export function AIAgentStudio() {
         </section>
       </div>}
 
-      {tab==="agents" && <section className="space-y-4"><div className="flex gap-2"><input className="input" placeholder="Search agents..." value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map(t=>{const Icon=t.icon;return <div key={t.name} className="card p-5"><div className="flex items-start justify-between"><div className="rounded-xl bg-primary-50 p-2.5 text-primary-700 dark:bg-primary-950/30"><Icon size={20}/></div><span className="text-xs text-gray-400">{t.role}</span></div><h3 className="mt-4 font-semibold">{t.name}</h3><p className="mt-1 text-sm text-gray-500">{t.description}</p><div className="mt-3 flex flex-wrap gap-1">{t.capabilities.map(c=><span key={c} className="rounded-full bg-gray-100 px-2 py-1 text-[10px] dark:bg-gray-800">{c}</span>)}</div><button onClick={()=>void createFromTemplate(t)} className="btn-primary mt-4 w-full justify-center"><Plus size={14}/> Create agent</button></div>})}</div></section>}
+      {tab==="agents" && <section className="space-y-4"><div className="flex gap-2"><input className="input" placeholder="Search agents..." value={search} onChange={e=>setSearch(e.target.value)}/></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{filtered.map(t=>{const Icon=t[2];return <div key={t[0]} className="card p-5"><div className="flex items-start justify-between"><div className="rounded-xl bg-primary-50 p-2.5 text-primary-700 dark:bg-primary-950/30"><Icon size={20}/></div><span className="text-xs text-gray-400">{t[1]}</span></div><h3 className="mt-4 font-semibold">{t[0]}</h3><p className="mt-1 text-sm text-gray-500">{t[3]}</p><div className="mt-3 flex flex-wrap gap-1">{t[4].map(c=><span key={c} className="rounded-full bg-gray-100 px-2 py-1 text-[10px] dark:bg-gray-800">{c}</span>)}</div><button onClick={()=>void createFromTemplate(t)} className="btn-primary mt-4 w-full justify-center"><Plus size={14}/> Create agent</button></div>})}</div></section>}
 
       {tab==="memory" && <section className="card p-5"><div className="flex items-center justify-between"><div><h2 className="font-semibold">Persistent agent memory</h2><p className="text-xs text-gray-500">Store approved facts, preferences, instructions, events and tasks for the selected agent.</p></div><BrainCircuit size={20}/></div><div className="mt-5 space-y-2">{memories.map(m=><div key={m.id} className="flex gap-3 rounded-xl border p-3 dark:border-gray-800"><BrainCircuit size={16} className="mt-1 text-primary-600"/><div><span className="text-[10px] uppercase text-gray-400">{m.memory_type}</span><p className="text-sm">{m.content}</p></div></div>)}</div><div className="mt-5 flex gap-2"><input className="input" value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="Add a fact or instruction the agent should remember..."/><button className="btn-primary" onClick={()=>void addMemory()} disabled={!prompt.trim()||!agent}><BrainCircuit size={15}/> Remember</button></div></section>}
 
