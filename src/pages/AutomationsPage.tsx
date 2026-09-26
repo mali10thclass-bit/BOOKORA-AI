@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { useEffect, useState } from "react";
 import { GitBranch, Plus, Play, RefreshCw, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
