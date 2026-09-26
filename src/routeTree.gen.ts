@@ -110,7 +110,8 @@ const AiAgentStudioRoute = AiAgentStudioRouteImport.update({
   id: '/ai-agent-studio',
   path: '/ai-agent-studio',
   getParentRoute: () => rootRouteImport,
-} as any)const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
+} as any)
+const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
   id: '/ai-agent-operations',
   path: '/ai-agent-operations',
   getParentRoute: () => rootRouteImport,
