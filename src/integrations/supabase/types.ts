@@ -1178,6 +1178,7 @@ export type Database = {
         Update: { name?: string; input?: string; expected_criteria?: Json; enabled?: boolean; };
         Relationships: [];
       };
+    };
     Views: {
       [_ in never]: never;
     };
@@ -1332,7 +1333,6 @@ export type Database = {
       [_ in never]: never;
     };
   };
-};
 };
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
