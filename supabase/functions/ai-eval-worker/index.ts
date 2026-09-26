@@ -9,7 +9,24 @@ if (!url || !key || !workerSecret) throw new Error("Missing worker configuration
 const admin = createClient(url,key);
 
 function ok(req:Request){return req.headers.get("x-bookora-worker-secret")===workerSecret}
-function criteriaPass(output:string,c:any){
+type EvaluationCriteria = {
+  exact?: unknown;
+  contains_any?: unknown;
+  contains_all?: unknown;
+  regex?: unknown;
+  max_length?: unknown;
+  must_not_contain?: unknown;
+};
+type EvaluationResult = {
+  caseId: string;
+  input: string;
+  output: string;
+  passed: boolean;
+  score: number;
+  feedback: string;
+};
+
+function criteriaPass(output:string,c:EvaluationCriteria){
   const checks:boolean[]=[];
   if(typeof c?.exact==="string") checks.push(output.trim()===c.exact.trim());
   if(Array.isArray(c?.contains_any)&&c.contains_any.length) checks.push(c.contains_any.some((x:string)=>output.toLowerCase().includes(x.toLowerCase())));
@@ -34,7 +51,7 @@ Deno.serve(async(req)=>{
         admin.from("ai_agent_eval_cases").select("id,input,expected_criteria").eq("agent_id",run.agent_id).eq("business_id",run.business_id).eq("enabled",true).order("created_at")
       ]);
       if(!agent) throw new Error("Agent not found");
-      const results:any[]=[];
+      const results:EvaluationResult[]=[];
       for(const c of cases??[]){
         try{
           const response=await fetch("https://ai.gateway.lovable.dev/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+lovableKey,"Lovable-API-Key":lovableKey},body:JSON.stringify({model:agent.model??"openai/gpt-4o-mini",messages:[{role:"system",content:["You are being evaluated as a BOOKORA AI business agent.","Never invent business facts.",agent.system_prompt??""].join("\n")},{role:"user",content:c.input}],temperature:0.1})});
