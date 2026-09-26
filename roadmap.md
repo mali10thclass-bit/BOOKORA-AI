@@ -11,7 +11,10 @@
 - [x] Business-scoped RLS and membership/role hardening
 - [x] Free / Pro / Ultimate database plan limits and feature entitlement helper
 - [x] AI assistant UI and Pro/Ultimate entitlement gate
-- [x] GitHub Actions CI for TypeScript typecheck and production build
+- [x] GitHub Actions CI for TypeScript, formatting, lint and production build
+- [x] Installable PWA with production service worker and safe cache policy
+- [x] Reproducible unsigned Windows x64 executable packaging and CI artifact
+- [x] Production Vercel deployment workflow with protected environment, secret validation and post-deploy smoke test
 
 ## Current production blockers
 
@@ -24,7 +27,7 @@
 - [ ] Configure and verify the Lovable AI Gateway/API key for the AI assistant
 - [ ] Configure email/SMS/push providers if those channels are required
 - [ ] Add real billing-provider integration before enabling paid-plan activation
-- [ ] Run end-to-end smoke tests and publish only after the deployment provider reports a successful release
+- [ ] Run end-to-end smoke tests against the real production URL after the hosting secrets are configured and a deployment succeeds
 
 ## Access required for live deployment
 
