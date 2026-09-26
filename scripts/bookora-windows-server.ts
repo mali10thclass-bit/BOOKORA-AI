@@ -1,7 +1,6 @@
-import { join, normalize, relative, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join, normalize, relative, sep } from "node:path";
 
-const root = fileURLToPath(new URL("../dist/client/", import.meta.url));
+const root = join(dirname(process.execPath), "client");
 const port = Number(process.env.BOOKORA_PORT ?? 4173);
 
 function safePath(pathname: string): string | null {
