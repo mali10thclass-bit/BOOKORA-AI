@@ -33,6 +33,7 @@ import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
 import { Route as AiAgentStudioRouteImport } from './routes/ai-agent-studio'
 import { Route as AiAgentOperationsRouteImport } from './routes/ai-agent-operations'
+import { Route as AiChatPublicKeyRouteImport } from './routes/ai-chat.$publicKey'
 import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
 import { Route as BusinessOsRouteImport } from './routes/business-os'
 
@@ -116,6 +117,11 @@ const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
   path: '/ai-agent-operations',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiChatPublicKeyRoute = AiChatPublicKeyRouteImport.update({
+  id: '/ai-chat/$publicKey',
+  path: '/ai-chat/$publicKey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 const AutomationsRoute = AutomationsRouteImport.update({
   id: '/automations',
@@ -183,6 +189,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/ai-trainer': typeof AiTrainerRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
   '/automations': typeof AutomationsRoute
   '/developer': typeof DeveloperRoute
   '/forms': typeof FormsRoute
@@ -263,6 +272,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staff'
     | '/ai-trainer'
+    | '/ai-agent-studio'
+    | '/ai-agent-operations'
+    | '/ai-chat/$publicKey'
+    | '/ai-agent-studio'
+    | '/ai-agent-operations'
+    | '/ai-chat/$publicKey'
     | '/automations'
     | '/developer'
     | '/forms'
@@ -340,6 +355,9 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
   AiTrainerRoute: typeof AiTrainerRoute
+  AiAgentStudioRoute: typeof AiAgentStudioRoute
+  AiAgentOperationsRoute: typeof AiAgentOperationsRoute
+  AiChatPublicKeyRoute: typeof AiChatPublicKeyRoute
   AutomationsRoute: typeof AutomationsRoute
   DeveloperRoute: typeof DeveloperRoute
   FormsRoute: typeof FormsRoute
@@ -452,6 +470,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiTrainerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-agent-studio': {
+      id: '/ai-agent-studio'
+      path: '/ai-agent-studio'
+      fullPath: '/ai-agent-studio'
+      preLoaderRoute: typeof AiAgentStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-agent-operations': {
+      id: '/ai-agent-operations'
+      path: '/ai-agent-operations'
+      fullPath: '/ai-agent-operations'
+      preLoaderRoute: typeof AiAgentOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-chat/$publicKey': {
+      id: '/ai-chat/$publicKey'
+      path: '/ai-chat/$publicKey'
+      fullPath: '/ai-chat/$publicKey'
+      preLoaderRoute: typeof AiChatPublicKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/automations': {
       id: '/automations'
       path: '/automations'
@@ -540,6 +579,9 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
   AiTrainerRoute: AiTrainerRoute,
+  AiAgentStudioRoute: AiAgentStudioRoute,
+  AiAgentOperationsRoute: AiAgentOperationsRoute,
+  AiChatPublicKeyRoute: AiChatPublicKeyRoute,
   AiAgentStudioRoute: AiAgentStudioRoute,
   AutomationsRoute: AutomationsRoute,
   DeveloperRoute: DeveloperRoute,
