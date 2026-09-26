@@ -53,12 +53,13 @@ export function createLocalAiProvider() {
   });
 }
 
-export function createBusinessAiChatModel() {
+export function createBusinessAiChatModel(model?: string) {
+  const selectedModel = model?.trim() || getAiRuntimeModel();
   if (getAiRuntimeMode() === "local") {
-    return createLocalAiProvider().chat(getAiRuntimeModel());
+    return createLocalAiProvider().chat(selectedModel);
   }
 
   const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
   if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
-  return createLovableResponsesProvider(apiKey).chat(getAiRuntimeModel());
+  return createLovableResponsesProvider(apiKey).chat(selectedModel);
 }
