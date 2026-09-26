@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useI18n } from "@/context/I18nContext";
 import { getPlanLimits } from "@/lib/utils";
 import type { PlanTier } from "@/types";
-import { Check, CreditCard, Zap, Crown, Sparkles, ShieldCheck } from "lucide-react";
+import { Check, CreditCard, Zap, Crown, Sparkles, ShieldCheck, Building2 } from "lucide-react";
 
 const PLAN_COLORS: Record<PlanTier, { bg: string; text: string }> = {
   free: {
@@ -16,6 +16,10 @@ const PLAN_COLORS: Record<PlanTier, { bg: string; text: string }> = {
   ultimate: {
     bg: "bg-accent-50 dark:bg-accent-900/20",
     text: "text-accent-600 dark:text-accent-400",
+  },
+  enterprise: {
+    bg: "bg-gray-950 dark:bg-black",
+    text: "text-white",
   },
 };
 
@@ -32,7 +36,8 @@ export function PlansPage() {
   }[] = [
     { tier: "free", name: t("free"), priceMonthly: 0, priceYearly: 0, icon: Sparkles },
     { tier: "pro", name: t("pro"), priceMonthly: 29, priceYearly: 290, icon: Zap },
-    { tier: "ultimate", name: t("ultimate"), priceMonthly: 79, priceYearly: 790, icon: Crown },
+    { tier: "ultimate", name: t("ultimate"), priceMonthly: 79, priceYearly: 768, icon: Crown },
+    { tier: "enterprise", name: "Enterprise", priceMonthly: 0, priceYearly: 0, icon: Building2 },
   ];
 
   return (
@@ -44,7 +49,7 @@ export function PlansPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {plans.map((plan) => {
           const limits = getPlanLimits(plan.tier);
           const isCurrent = business?.plan === plan.tier;
@@ -81,19 +86,19 @@ export function PlansPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-gray-500">Staff:</span>
                   <span className="font-medium">
-                    {limits.maxStaff === 999 ? "Unlimited" : limits.maxStaff}
+                    {limits.maxStaff >= 999 ? "Unlimited" : limits.maxStaff}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-gray-500">Locations:</span>
                   <span className="font-medium">
-                    {limits.maxLocations === 999 ? "Unlimited" : limits.maxLocations}
+                    {limits.maxLocations >= 999 ? "Unlimited" : limits.maxLocations}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-gray-500">Services:</span>
                   <span className="font-medium">
-                    {limits.maxServices === 999 ? "Unlimited" : limits.maxServices}
+                    {limits.maxServices >= 999 ? "Unlimited" : limits.maxServices}
                   </span>
                 </div>
               </div>
@@ -116,9 +121,11 @@ export function PlansPage() {
               >
                 {isCurrent
                   ? "Current plan"
-                  : plan.tier === "free"
-                    ? "Available after billing setup"
-                    : "Activate through billing"}
+                   : plan.tier === "enterprise"
+                    ? "Contact sales"
+                    : plan.tier === "free"
+                      ? "Available after billing setup"
+                      : "Activate through billing"}
               </div>
             </div>
           );

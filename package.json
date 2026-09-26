@@ -3,6 +3,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "packageManager": "bun@1.3.4",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -10,7 +11,10 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "env:check": "node scripts/check-env.mjs",
+    "windows:build": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-exe.ps1",
+    "windows:verify": "node scripts/check-executable-layout.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

@@ -1,0 +1,10 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+const url=Deno.env.get("SUPABASE_URL"); const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??Deno.env.get("SUPABASE_SECRET_KEYS"); const secret=Deno.env.get("BOOKORA_WORKER_SECRET");
+if(!url||!key||!secret) throw new Error("Missing worker configuration");
+const admin=createClient(url,key);
+Deno.serve(async(req)=>{if(req.headers.get("x-bookora-worker-secret")!==secret)return Response.json({error:"Unauthorized"},{status:401});if(req.method!=="POST")return Response.json({error:"Method not allowed"},{status:405});
+ const {data:due,error}=await admin.rpc("claim_due_ai_schedules",{p_limit:25}); if(error)return Response.json({error:error.message},{status:500});
+ const {data:enqueued,error:queueError}=await admin.rpc("enqueue_scheduled_ai_evolution"); if(queueError)return Response.json({error:queueError.message},{status:500});
+ return Response.json({schedules_claimed:(due??[]).length,evolution_runs_enqueued:enqueued??0});
+});

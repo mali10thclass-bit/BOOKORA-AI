@@ -4,7 +4,7 @@ export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled" 
 
 export type PaymentStatus = "unpaid" | "paid" | "refunded" | "partial";
 
-export type PlanTier = "free" | "pro" | "ultimate";
+export type PlanTier = "free" | "pro" | "ultimate" | "enterprise";
 
 export interface Business {
   id: string;

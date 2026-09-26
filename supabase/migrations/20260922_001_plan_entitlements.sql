@@ -14,16 +14,19 @@ AS $$
   SELECT
     CASE p_plan
       WHEN 'ultimate' THEN 2147483647
+      WHEN 'enterprise' THEN 2147483647
       WHEN 'pro' THEN 15
       ELSE 3
     END,
     CASE p_plan
       WHEN 'ultimate' THEN 2147483647
+      WHEN 'enterprise' THEN 2147483647
       WHEN 'pro' THEN 3
       ELSE 1
     END,
     CASE p_plan
       WHEN 'ultimate' THEN 2147483647
+      WHEN 'enterprise' THEN 2147483647
       WHEN 'pro' THEN 50
       ELSE 10
     END;
@@ -44,9 +47,9 @@ AS $$
     WHEN feature_key IN ('dashboard', 'bookings', 'customers', 'services', 'staff', 'calendar', 'public_booking', 'notifications', 'settings_basic')
       THEN true
     WHEN feature_key IN ('analytics', 'csv_export', 'ai_assistant', 'sms_reminders')
-      THEN COALESCE((SELECT plan IN ('pro', 'ultimate') FROM public.businesses WHERE id = b_id), false)
+      THEN COALESCE((SELECT plan IN ('pro', 'ultimate', 'enterprise') FROM public.businesses WHERE id = b_id), false)
     WHEN feature_key IN ('white_label', 'advanced_automation', 'priority_support', 'multi_location_advanced')
-      THEN COALESCE((SELECT plan = 'ultimate' FROM public.businesses WHERE id = b_id), false)
+      THEN COALESCE((SELECT plan IN ('ultimate', 'enterprise') FROM public.businesses WHERE id = b_id), false)
     ELSE false
   END;
 $$;
@@ -66,7 +69,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  IF NEW.plan IS NULL OR NEW.plan NOT IN ('free', 'pro', 'ultimate') THEN
+  IF NEW.plan IS NULL OR NEW.plan NOT IN ('free', 'pro', 'ultimate', 'enterprise') THEN
     RAISE EXCEPTION 'Invalid BOOKORA plan';
   END IF;
 
