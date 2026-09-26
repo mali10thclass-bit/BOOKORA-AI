@@ -1333,6 +1333,7 @@ export type Database = {
     };
   };
 };
+};
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
 
