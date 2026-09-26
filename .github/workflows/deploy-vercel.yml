@@ -1,23 +1,75 @@
 name: Deploy BOOKORA AI to Vercel
+
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [main]
+
 permissions:
   contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: production
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
-      - run: npm install
-      - run: npm install --global vercel@latest
-      - name: Deploy
+          bun-version: 1.3.4
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate required deployment secrets
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel deploy --prod --token "$VERCEL_TOKEN" --yes
+        run: |
+          test -n "$VERCEL_TOKEN"
+          test -n "$VERCEL_ORG_ID"
+          test -n "$VERCEL_PROJECT_ID"
+
+      - name: Install Vercel CLI
+        run: bun add --global vercel@latest
+
+      - name: Pull production Vercel configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Build production artifact
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel build --prod --token "$VERCEL_TOKEN"
+
+      - name: Deploy production artifact
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN" | tee deployment-output.txt
+          grep -Eo 'https://[^[:space:]]+' deployment-output.txt | tail -n 1 > deployment-url.txt
+          test -s deployment-url.txt
+
+      - name: Smoke-test deployed URL
+        run: |
+          url=$(cat deployment-url.txt)
+          curl --fail --silent --show-error --location --max-time 30 "$url" -o /tmp/bookora-response.html
+          test -s /tmp/bookora-response.html
+
+      - name: Publish deployment URL
+        run: echo "BOOKORA production deployment: $(cat deployment-url.txt)"
