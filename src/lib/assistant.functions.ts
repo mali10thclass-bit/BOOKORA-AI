@@ -266,14 +266,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
   });
 
 
-const EvalCriteria = z.object({
-  contains_any: z.array(z.string()).optional(),
-  contains_all: z.array(z.string()).optional(),
-  exact: z.string().optional(),
-  regex: z.string().optional(),
-  max_length: z.number().int().positive().optional(),
-  must_not_contain: z.array(z.string()).optional(),
-}).passthrough();
+
 
 export const runAgentEvaluation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -344,23 +337,9 @@ export const runAgentEvaluation = createServerFn({ method: "POST" })
           messages: [{ role:"user", content: `Business: ${business.name}\nQuestion: ${testCase.input}` }],
         });
         const output = (await result.text).trim();
-        const criteria = EvalCriteria.safeParse(testCase.expected_criteria);
-        let checks = 0;
-        let passedChecks = 0;
-        const feedback: string[] = [];
-        if (criteria.success) {
-          const c = criteria.data;
-          if (c.exact !== undefined) { checks++; if (output.trim() === c.exact.trim()) passedChecks++; else feedback.push("exact mismatch"); }
-          if (c.contains_any?.length) { checks++; if (c.contains_any.some(x=>output.toLowerCase().includes(x.toLowerCase()))) passedChecks++; else feedback.push("none of contains_any matched"); }
-          if (c.contains_all?.length) { checks++; const ok=c.contains_all.every(x=>output.toLowerCase().includes(x.toLowerCase())); if(ok) passedChecks++; else feedback.push("contains_all failed"); }
-          if (c.regex) { checks++; try { if(new RegExp(c.regex,"i").test(output)) passedChecks++; else feedback.push("regex failed"); } catch { feedback.push("invalid regex criterion"); } }
-          if (c.max_length !== undefined) { checks++; if(output.length<=c.max_length) passedChecks++; else feedback.push("max_length failed"); }
-          if (c.must_not_contain?.length) { checks++; if(!c.must_not_contain.some(x=>output.toLowerCase().includes(x.toLowerCase()))) passedChecks++; else feedback.push("must_not_contain failed"); }
-        } else {
-          feedback.push("No valid deterministic criteria supplied");
-        }
-        const score = checks ? passedChecks / checks : 0;
-        results.push({caseId:testCase.id,input:testCase.input,output,passed:checks>0 && score===1,score,feedback:feedback.join("; ") || "passed"});
+        const { scoreEvalOutput } = await import("./agent-tools/eval-scoring");
+        const scored = scoreEvalOutput(output, testCase.expected_criteria);
+        results.push({caseId:testCase.id,input:testCase.input,output,passed:scored.passed,score:scored.score,feedback:scored.feedback});
       } catch (error) {
         results.push({caseId:testCase.id,input:testCase.input,output:"",passed:false,score:0,feedback:error instanceof Error?error.message:String(error)});
       }

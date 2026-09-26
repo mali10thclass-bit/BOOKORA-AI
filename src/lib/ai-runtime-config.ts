@@ -122,8 +122,8 @@ export function resolveAiModel(
   if (fallback?.trim()) return fallback.trim();
   if (provider === "ollama") {
     return (
-      trimmed(env["AI_LOCAL_MODEL"]) ??
       trimmed(env["LOCAL_AI_MODEL"]) ??
+      trimmed(env["AI_LOCAL_MODEL"]) ??
       AI_DEFAULTS.localModel
     );
   }
@@ -246,7 +246,7 @@ export function categorizeAiError(error: unknown): AiErrorCategory {
           : undefined;
 
   const message = String(err.message ?? "").toLowerCase();
-  const name = String(err.name ?? "");
+  const name = String(err.name ?? "").toLowerCase();
 
   if (name.includes("abort") || message.includes("timed out") || message.includes("timeout")) {
     return "timeout";
