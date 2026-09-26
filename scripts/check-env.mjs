@@ -15,14 +15,34 @@ for (const line of text.split(/\r?\n/)) {
   if (match) values.set(match[1], match[2]);
 }
 
-const missing = required.filter((key) => {
-  const value = values.get(key);
-  return !value || value.includes("your-project") || value.includes("your-publishable");
-});
+const placeholder = (value) =>
+  !value ||
+  /your-project|your-publishable|your-service-role|your-long-random-secret/i.test(value);
 
+const missing = required.filter((key) => placeholder(values.get(key)));
 if (missing.length) {
   console.error(`Missing or placeholder environment values: ${missing.join(", ")}`);
   process.exit(1);
 }
 
-console.log("Required client environment values are configured.");
+const mode = values.get("AI_RUNTIME_MODE") || "cloud";
+if (!["cloud", "local"].includes(mode)) {
+  console.error("AI_RUNTIME_MODE must be either cloud or local.");
+  process.exit(1);
+}
+
+if (mode === "cloud" && placeholder(values.get("LOVABLE_API_KEY"))) {
+  console.error("AI_RUNTIME_MODE=cloud requires LOVABLE_API_KEY.");
+  process.exit(1);
+}
+
+if (mode === "local") {
+  const baseUrl = values.get("AI_LOCAL_BASE_URL") || "http://127.0.0.1:11434/v1";
+  if (!/^https?:\/\//i.test(baseUrl)) {
+    console.error("AI_LOCAL_BASE_URL must be an http(s) URL.");
+    process.exit(1);
+  }
+  console.log(`Local CPU-first AI runtime selected: ${baseUrl}`);
+}
+
+console.log("Required client environment values and AI runtime configuration are valid.");
