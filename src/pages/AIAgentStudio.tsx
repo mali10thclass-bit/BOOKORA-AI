@@ -100,7 +100,7 @@ export function AIAgentStudio() {
       }
       await supabase.from("ai_agent_evaluations").insert({
         business_id:business.id,agent_id:agent.id,conversation_id:conversationId,question:text,answer,
-        grounded:!Boolean(result.error),support_score:null,citation_count:0,evaluator:"runtime",
+        grounded:!result.error,support_score:null,citation_count:0,evaluator:"runtime",
         feedback:result.error?String(result.error):"Grounded assistant response completed; citation scoring pending evaluator."
       });
       setMessages(x=>[...x,{id:crypto.randomUUID(),role:"assistant",content:answer,created_at:new Date().toISOString()}]);
