@@ -244,6 +244,12 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
   '/ai-trainer': typeof AiTrainerRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
   '/automations': typeof AutomationsRoute
   '/developer': typeof DeveloperRoute
   '/forms': typeof FormsRoute
@@ -275,9 +281,6 @@ export interface FileRouteTypes {
     | '/ai-agent-studio'
     | '/ai-agent-operations'
     | '/ai-chat/$publicKey'
-    | '/ai-agent-studio'
-    | '/ai-agent-operations'
-    | '/ai-chat/$publicKey'
     | '/automations'
     | '/developer'
     | '/forms'
@@ -285,6 +288,8 @@ export interface FileRouteTypes {
     | '/resources'
     | '/reviews'
     | '/waitlist'
+    | '/smart-operations'
+    | '/business-os'
     | '/book/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
