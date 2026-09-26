@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { streamText } from "ai";
+import type { ToolSet } from "ai";
 import { z } from "zod";
 
 const AskInput = z.object({
@@ -32,7 +33,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!member?.business_id) {
-      return { answer: null, error: "No business found for your account." };
+      return { answer: null, error: "No business found for your account.", toolActivity: [], pendingAction: null };
     }
 
     const business = (
@@ -50,13 +51,24 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
       return {
         answer: null,
         error: "AI Assistant is available on Pro, Ultimate and Enterprise plans. Upgrade through billing to continue.",
+        toolActivity: [],
+        pendingAction: null,
       };
     }
 
-    const runtimeMode = process.env["AI_RUNTIME_MODE"] === "local" ? "local" : "cloud";
-    const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
-    if (runtimeMode === "cloud" && !apiKey) {
-      return { answer: null, error: "AI is not configured for this project yet." };
+    const runtimeConfig = await import("./ai-runtime-config").then((m) => {
+      try {
+        return m.resolveAiRuntimeConfig();
+      } catch {
+        return null;
+      }
+    });
+    if (!runtimeConfig) {
+      return { answer: null, error: "AI is not configured correctly for this project.", toolActivity: [], pendingAction: null };
+    }
+    const needsApiKey = runtimeConfig.provider !== "ollama";
+    if (needsApiKey && !runtimeConfig.apiKey) {
+      return { answer: null, error: "AI is not configured for this project yet.", toolActivity: [], pendingAction: null };
     }
 
     const businessId = member.business_id;
@@ -91,7 +103,7 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
     const queryError = memoryRes.error ?? historyRes.error ?? snapshotRes.error ?? knowledgeRes.error ?? agentRes.error ?? runtimeModelRes.error;
     if (queryError) {
       console.error("[assistant] data query failed", queryError.message);
-      return { answer: null, error: "I could not read your business data just now." };
+      return { answer: null, error: "I could not read your business data just now.", toolActivity: [], pendingAction: null };
     }
 
     const knowledge = (knowledgeRes.data ?? []).map((item) => ({
@@ -119,14 +131,84 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
         : null,
     };
 
-    const { createBusinessAiChatModel, getAiRuntimeMode, getAiRuntimeModel } = await import("./ai-gateway.server");
+    const { createBusinessAiChatModel, getAiRuntimeMode, getAiRuntimeModel, getAiRetryPolicy } = await import("./ai-gateway.server");
+    const { buildInjectionHardenedSystemPrompt, wrapUntrusted } = await import("./agent-tools/guardrails");
+    const { runAgentToolCore, toolResultToUntrustedText, resolveAgentToolContext } = await import("./agent-tools/executor-core.server");
+    const { listAgentTools } = await import("./agent-tools/registry");
+    const { categorizeAiError, toSafeAiErrorMessage } = await import("./ai-runtime-config");
+    const { generateText, stepCountIs, tool } = await import("ai");
     const runtimeMode = getAiRuntimeMode();
     const runtimeModel = typeof runtimeModelRes.data === "string" ? runtimeModelRes.data : getAiRuntimeModel();
+    const retryPolicy = getAiRetryPolicy();
     const language = LANGUAGE_NAMES[data.language] ?? "English";
 
+    // Full business context for controlled tool execution (server-resolved).
+    const toolCtx = await resolveAgentToolContext(supabase, context.userId);
+
+    const toolActivity: Array<{ toolName: string; status: string; summary: string }> = [];
+    // Holder object so control-flow analysis doesn't narrow across closures.
+    const pendingActionRef: {
+      current: { proposalId: string; toolName: string; summary: string } | null;
+    } = { current: null };
+
+    const toolsForModel: ToolSet = {};
+    if (toolCtx) {
+      for (const def of listAgentTools({ channel: "dashboard" })) {
+        toolsForModel[def.name] = tool({
+          description: def.description,
+          inputSchema: def.inputSchema,
+          execute: async (args: Record<string, unknown>) => {
+            const toolResult = await runAgentToolCore({
+              toolName: def.name,
+              input: args,
+              mode: "auto",
+              ctx: {
+                ...toolCtx,
+                agentId: data.agentId ?? null,
+                conversationId: data.conversationId ?? null,
+              },
+              supabase,
+            });
+            toolActivity.push({
+              toolName: def.name,
+              status: toolResult.status,
+              summary: toolResult.summary,
+            });
+            if (toolResult.status === "confirmation_required" && !pendingActionRef.current) {
+              pendingActionRef.current = {
+                proposalId: toolResult.proposalId,
+                toolName: toolResult.toolName,
+                summary: toolResult.summary,
+              };
+            }
+            // Tool output is untrusted DATA - wrapped and sanitized for the model.
+            return toolResultToUntrustedText(toolResult);
+          },
+        });
+      }
+    }
+
+    const systemPrompt = buildInjectionHardenedSystemPrompt({
+      languageName: language,
+      agentName: snapshot.activeAgent ? (snapshot.activeAgent as { name?: string }).name : null,
+      agentInstructions: snapshot.activeAgent
+        ? [
+            (snapshot.activeAgent as { systemPrompt?: string }).systemPrompt ?? "",
+            JSON.stringify((snapshot.activeAgent as { config?: unknown }).config ?? {}),
+          ].join("\n")
+        : null,
+      tone: null,
+      toolNames: Object.keys(toolsForModel),
+      allowActions: true,
+    });
+
     try {
-      const result = streamText({
+      const result = await generateText({
         model: createBusinessAiChatModel(runtimeModel),
+        tools: toolsForModel,
+        stopWhen: stepCountIs(4),
+        maxRetries: retryPolicy.maxRetries,
+        abortSignal: AbortSignal.timeout(retryPolicy.timeoutMs),
         providerOptions:
           runtimeMode === "cloud"
             ? {
@@ -138,28 +220,27 @@ export const askBusinessAssistant = createServerFn({ method: "POST" })
                 },
               }
             : undefined,
-        system: [
-          "You are the business analytics assistant inside BOOKORA AI, an appointment booking app.",
-          "Answer strictly from the JSON business snapshot, retrieved business knowledge, approved agent memory, active agent instructions, and recent conversation given in the user message.",
-          "Never invent numbers, policies, availability, customer details, or actions. If evidence is missing or conflicting, say so plainly. Never claim an action was completed unless a verified tool result says it was completed.",
-          "Be concise: short paragraphs or small bullet lists, with concrete numbers and the business currency.",
-          `Reply only in ${language}.`,
-        ].join(" "),
+        system: systemPrompt,
         messages: [
           {
             role: "user",
-            content: `Business data snapshot (JSON):
-${JSON.stringify(snapshot)}
-
-Question: ${data.question}`,
+            content: [
+              wrapUntrusted("business_snapshot_json", JSON.stringify(snapshot)),
+              wrapUntrusted("user_question", data.question),
+            ].join("\n\n"),
           },
         ],
       });
 
-      const answer = (await result.text).trim();
-      return { answer: answer || "I could not produce an answer for that question.", error: null };
+      const answer = result.text.trim();
+      return {
+        answer: answer || "I could not produce an answer for that question.",
+        error: null,
+        toolActivity,
+        pendingAction: pendingActionRef.current,
+      };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const category = categorizeAiError(error);
       const status =
         (error as { statusCode?: number; status?: number }).statusCode ??
         (error as { status?: number }).status;
@@ -167,16 +248,20 @@ Question: ${data.question}`,
         return {
           answer: null,
           error: "The workspace is out of AI credits. Add credits to keep using the assistant.",
+          toolActivity,
+          pendingAction: pendingActionRef.current,
         };
       }
       if (status === 429) {
         return {
           answer: null,
           error: "The assistant is rate limited right now. Try again in a moment.",
+          toolActivity,
+          pendingAction: pendingActionRef.current,
         };
       }
-      console.error("[assistant]", message);
-      return { answer: null, error: "The assistant could not answer right now." };
+      console.error("[assistant]", category);
+      return { answer: null, error: toSafeAiErrorMessage(category), toolActivity, pendingAction: pendingActionRef.current };
     }
   });
 
@@ -209,8 +294,17 @@ export const runAgentEvaluation = createServerFn({ method: "POST" })
     if (!business || !["pro","ultimate","enterprise"].includes(business.plan ?? "free")) {
       return { error: "Agent evaluation requires a Pro, Ultimate or Enterprise plan." };
     }
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) return { error: "AI is not configured for this project yet." };
+    const runtimeConfig = await import("./ai-runtime-config").then((m) => {
+      try {
+        return m.resolveAiRuntimeConfig();
+      } catch {
+        return null;
+      }
+    });
+    if (!runtimeConfig) return { error: "AI is not configured correctly for this project." };
+    if (runtimeConfig.provider !== "ollama" && !runtimeConfig.apiKey) {
+      return { error: "AI is not configured for this project yet." };
+    }
 
     const { data: agent } = await supabase
       .from("ai_agents")
@@ -231,14 +325,16 @@ export const runAgentEvaluation = createServerFn({ method: "POST" })
 
     await supabase.from("ai_agent_eval_runs").update({ status:"running" }).eq("id", data.runId).eq("business_id", businessId);
 
-    const { createLovableResponsesProvider } = await import("./ai-gateway.server");
-    const lovable = createLovableResponsesProvider(apiKey);
+    const { createBusinessAiChatModel, getAiRetryPolicy } = await import("./ai-gateway.server");
+    const retry = getAiRetryPolicy();
     const results: Array<{caseId:string; input:string; output:string; passed:boolean; score:number; feedback:string}> = [];
 
     for (const testCase of cases ?? []) {
       try {
         const result = streamText({
-          model: lovable.responses(agent.model || "openai/gpt-4o-mini"),
+          model: createBusinessAiChatModel(agent.model || undefined),
+          maxRetries: retry.maxRetries,
+          abortSignal: AbortSignal.timeout(retry.timeoutMs),
           providerOptions: { openai: { forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", store: false } },
           system: [
             "You are being evaluated as a BOOKORA AI business agent.",

@@ -31,18 +31,46 @@ if (!["cloud", "local"].includes(mode)) {
   process.exit(1);
 }
 
-if (mode === "cloud" && placeholder(values.get("LOVABLE_API_KEY"))) {
-  console.error("AI_RUNTIME_MODE=cloud requires LOVABLE_API_KEY.");
+// Preferred provider selection (mirrors src/lib/ai-runtime-config.ts).
+const provider = (values.get("AI_PROVIDER") || (mode === "local" ? "ollama" : "lovable")).toLowerCase();
+if (!["lovable", "ollama", "openai-compatible"].includes(provider)) {
+  console.error('AI_PROVIDER must be one of "lovable", "ollama", "openai-compatible".');
   process.exit(1);
 }
 
-if (mode === "local") {
-  const baseUrl = values.get("AI_LOCAL_BASE_URL") || "http://127.0.0.1:11434/v1";
+if (provider === "lovable" && placeholder(values.get("LOVABLE_API_KEY"))) {
+  console.error("The cloud AI provider requires LOVABLE_API_KEY.");
+  process.exit(1);
+}
+
+if (provider === "openai-compatible") {
+  const baseUrl = values.get("AI_BASE_URL") || "";
   if (!/^https?:\/\//i.test(baseUrl)) {
-    console.error("AI_LOCAL_BASE_URL must be an http(s) URL.");
+    console.error("AI_PROVIDER=openai-compatible requires AI_BASE_URL (http/https).");
+    process.exit(1);
+  }
+  if (placeholder(values.get("AI_API_KEY"))) {
+    console.error("AI_PROVIDER=openai-compatible requires AI_API_KEY.");
+    process.exit(1);
+  }
+}
+
+if (provider === "ollama") {
+  const baseUrl =
+    values.get("LOCAL_AI_BASE_URL") || values.get("AI_LOCAL_BASE_URL") || "http://127.0.0.1:11434/v1";
+  if (!/^https?:\/\//i.test(baseUrl)) {
+    console.error("LOCAL_AI_BASE_URL must be an http(s) URL.");
     process.exit(1);
   }
   console.log(`Local CPU-first AI runtime selected: ${baseUrl}`);
+}
+
+for (const key of ["AI_TIMEOUT_MS", "AI_MAX_RETRIES"]) {
+  const raw = values.get(key);
+  if (raw !== undefined && raw !== "" && !/^\d+$/.test(raw)) {
+    console.error(`${key} must be a positive integer.`);
+    process.exit(1);
+  }
 }
 
 console.log("Required client environment values and AI runtime configuration are valid.");
