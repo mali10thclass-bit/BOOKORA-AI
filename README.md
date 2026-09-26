@@ -28,6 +28,22 @@ Commands:
 | `npm run build` | Production build |
 | `npx tsc --noEmit` | TypeScript typecheck |
 | `npm run lint` | Lint |
+| `npm run env:check` | Validate required local Supabase client environment variables |
+
+## Windows installation
+
+A repository-provided PowerShell installer prepares a local production build without embedding credentials:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\scripts\install-windows.ps1
+```
+
+For details, see `docs/INSTALL_WINDOWS.md`. This is a local/PWA installation workflow, not a claim of a signed Windows `.exe` installer.
+
+## PWA installation
+
+The app includes a web manifest and production service worker. On an HTTPS deployment, supported browsers can offer **Install BOOKORA AI** / **Add to Home Screen**. The service worker provides cached shell/offline fallback behavior; authenticated database operations still require network access.
 
 ## Database and security
 
