@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { safeFetchText } from "./url-safety.ts";
 
 const url = Deno.env.get("SUPABASE_URL");
 const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
@@ -47,10 +48,7 @@ Deno.serve(async (req: Request) => {
   const results=[];
   for (const job of jobs ?? []) {
     try {
-      if (!job.source_url || !isSafeRefreshUrl(job.source_url)) throw new Error("Source URL is not an allowed HTTPS public URL");
-      const response=await fetch(job.source_url,{headers:{"user-agent":"BOOKORA-AI-KnowledgeRefresh/1.0"},signal:AbortSignal.timeout(15000)});
-      if (!response.ok) throw new Error(`Source returned HTTP ${response.status}`);
-      const content=extractText(await response.text());
+      const content=extractText(await safeFetchText(job.source_url));
       if (!content) throw new Error("Source returned no usable text");
       const newDigest=await digest(content);
       const changed=newDigest !== job.current_digest;
