@@ -1125,7 +1125,7 @@ export type Database = {
         Relationships: [];
       };
       ai_agent_deployments: {
-        Row: { id: string; business_id: string; agent_id: string; channel: string; public_key: string | null; settings: Json; enabled: boolean; created_at: string; updated_at: string; };
+        Row: { id: string; business_id: string; agent_id: string; channel: string; public_key: string | null; public_key_hash: string | null; public_key_prefix: string | null; rate_limit_per_minute: number; allowed_origins: string[]; public_system_prompt: string | null; last_used_at: string | null; settings: Json; enabled: boolean; created_at: string; updated_at: string; };
         Insert: { id?: string; business_id: string; agent_id: string; channel: string; public_key?: string | null; settings?: Json; enabled?: boolean; };
         Update: { channel?: string; public_key?: string | null; settings?: Json; enabled?: boolean; updated_at?: string; };
         Relationships: [];
@@ -1183,6 +1183,36 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      ai_model_comparison_catalog: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          provider: string;
+          model_key: string;
+          display_name: string;
+          status: string;
+          runtime_compatible: boolean;
+          context_window: number | null;
+          capabilities: Json;
+          comparison_profiles: Json;
+          source_url: string | null;
+        }[];
+      };
+      rollback_ai_agent_version: {
+        Args: { p_version_id: string };
+        Returns: Json;
+      };
+      promote_ai_improvement_candidate: {
+        Args: { p_candidate_id: string };
+        Returns: Json;
+      };
+      rotate_public_ai_deployment_key: {
+        Args: { p_deployment_id: string };
+        Returns: Json;
+      };
+      create_public_ai_deployment: {
+        Args: { p_business_id: string; p_agent_id: string; p_channel?: string; p_allowed_origins?: string[] };
+        Returns: Json;
+      };
       ai_runtime_model: {
         Args: { p_business_id: string; p_agent_id: string };
         Returns: string;
