@@ -9,7 +9,8 @@ for database, auth, and row-level security.
 
 ## Requirements
 
-- Node.js 20 or newer (Bun also works)
+- Windows 10/11 for the Windows workflow
+- Node.js 20 or newer (Bun 1.3.4+ is recommended)
 - A Supabase project
 
 ## Setup
@@ -26,7 +27,7 @@ Commands:
 | --- | --- |
 | `npm run dev` | Start the development server |
 | `npm run build` | Production build |
-| `npx tsc --noEmit` | TypeScript typecheck |
+| `bun run typecheck` | TypeScript typecheck |
 | `npm run lint` | Lint |
 | `npm run env:check` | Validate required local Supabase client environment variables |
 
@@ -40,6 +41,12 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 For details, see `docs/INSTALL_WINDOWS.md`. This is a local/PWA installation workflow, not a claim of a signed Windows `.exe` installer.
+
+## Windows executable
+
+The repository now includes a reproducible **unsigned Windows x64 executable package**. It is a local static-client launcher around the production client build; it is not a signed native desktop application and does not remove the need for a configured `.env` at build time.
+
+Build locally with `bun run windows:build`. GitHub Actions also provides a Windows artifact workflow at `.github/workflows/windows-exe.yml`.
 
 ## PWA installation
 
@@ -101,11 +108,7 @@ Supabase requires the configured project URL and publishable key.
 
 ## Verification
 
-Every push to `main` now runs GitHub Actions for:
-
-1. `npm ci`
-2. `npx tsc --noEmit`
-3. `npm run build`
+Every push to `main` runs GitHub Actions with Bun 1.3.4 for dependency installation, TypeScript, formatting, linting and production build. The Windows executable workflow builds an unsigned Windows x64 artifact separately.
 
 Check the repository Actions tab for the latest verification result.
 
