@@ -1,4 +1,4 @@
-const CACHE_NAME = "bookora-shell-v1";
+const CACHE_NAME = "bookora-shell-v2";
 const APP_SHELL = ["/", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
@@ -8,27 +8,37 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
-    ),
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))),
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
+  const request = event.request;
+  const url = new URL(request.url);
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok && response.type === "basic") {
+  // Never cache Supabase/API/auth traffic or non-GET requests.
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/rest/") || url.pathname.startsWith("/auth/")) return;
+
+  // Navigation requests use network-first so authenticated/server-rendered pages stay fresh.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() => caches.match("/")),
+    );
+    return;
+  }
+
+  // Only cache explicitly versioned static assets; do not cache arbitrary GET responses.
+  if (url.pathname.startsWith("/assets/") || url.pathname === "/manifest.json") {
+    event.respondWith(
+      caches.match(request).then((cached) => cached ?? fetch(request).then((response) => {
+        if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
-      })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match("/"))),
-  );
+      })),
+    );
+  }
 });
