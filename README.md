@@ -87,7 +87,7 @@ applied and independently verified before production use.
 | Dashboard / bookings / calendar | Implemented |
 | Customers / staff / services | Implemented |
 | Analytics / CSV export | Implemented and plan-gated |
-| AI business assistant | Implemented and Pro/Ultimate gated |
+| AI business assistant | Implemented, Pro/Ultimate gated, cloud + CPU-first local runtime |
 | Public booking | Implemented through validated database RPCs |
 | Manual payment ledger | Implemented |
 | Free / Pro / Ultimate entitlements | Database-enforced limits and feature gates |
@@ -103,7 +103,11 @@ as production-ready.
 See `.env.example`. Client-visible `VITE_*` values are safe to expose in the
 browser. Server-only secrets must never be committed.
 
-The AI assistant requires the configured AI gateway/provider environment.
+The AI assistant supports two server-side runtime modes:
+- Cloud mode uses the Lovable AI Gateway and requires LOVABLE_API_KEY.
+- Local mode uses an OpenAI-compatible local endpoint such as Ollama and defaults to http://127.0.0.1:11434/v1 with the qwen-1.5b model. This path is CPU-first and does not require CUDA/GPU.
+
+Set AI_RUNTIME_MODE=local to use the local runtime. Keep all provider/service credentials server-side and never commit them.
 Supabase requires the configured project URL and publishable key.
 
 ## Verification
