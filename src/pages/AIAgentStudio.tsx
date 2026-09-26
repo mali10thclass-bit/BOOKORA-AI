@@ -8,7 +8,7 @@ import { askBusinessAssistant } from "@/lib/assistant.functions";
 
 type Agent = { id: string; name: string; description: string | null; role: string; status: string; capabilities: unknown; starter_prompts: unknown };
 type Message = { id: string; role: string; content: string; created_at: string };
-type Template = { name: string; role: string; icon: typeof Bot; description: string; capabilities: string[] };
+type Template = [name: string, role: string, icon: typeof Bot, description: string, capabilities: string[]];
 
 const templates: Template[] = [
   ["Business Copilot","business_assistant",Bot,"Company-aware answers, analytics, knowledge and memory",["Q&A","analytics","memory"]],
