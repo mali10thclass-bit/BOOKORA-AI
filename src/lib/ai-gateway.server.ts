@@ -2,6 +2,19 @@ import { createOpenAI } from "@ai-sdk/openai";
 
 const LOVABLE_AIG_RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
 
+export type AiRuntimeMode = "cloud" | "local";
+
+export function getAiRuntimeMode(): AiRuntimeMode {
+  return process.env["AI_RUNTIME_MODE"] === "local" ? "local" : "cloud";
+}
+
+export function getAiRuntimeModel(fallback = "openai/gpt-4o-mini") {
+  const configured = process.env["AI_MODEL"]?.trim();
+  if (configured) return configured;
+  if (getAiRuntimeMode() === "local") return process.env["AI_LOCAL_MODEL"]?.trim() || "qwen-1.5b";
+  return fallback;
+}
+
 export function createLovableAiGatewayRunIdFetch(initialRunId?: string) {
   let runId = initialRunId?.trim() || undefined;
 
@@ -31,4 +44,21 @@ export function createLovableResponsesProvider(lovableApiKey: string, initialRun
     },
     fetch: runIdFetch.fetch as typeof fetch,
   });
+}
+
+export function createLocalAiProvider() {
+  return createOpenAI({
+    baseURL: process.env["AI_LOCAL_BASE_URL"]?.trim() || "http://127.0.0.1:11434/v1",
+    apiKey: process.env["AI_LOCAL_API_KEY"]?.trim() || "ollama",
+  });
+}
+
+export function createBusinessAiChatModel() {
+  if (getAiRuntimeMode() === "local") {
+    return createLocalAiProvider().chat(getAiRuntimeModel());
+  }
+
+  const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
+  if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+  return createLovableResponsesProvider(apiKey).chat(getAiRuntimeModel());
 }
