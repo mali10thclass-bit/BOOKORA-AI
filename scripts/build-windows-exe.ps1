@@ -9,5 +9,5 @@ bun install --frozen-lockfile
 bun run build
 New-Item -ItemType Directory -Force -Path "dist/windows" | Out-Null
 bun build scripts/bookora-windows-server.ts --compile --target=bun-windows-x64 --outfile=dist/windows/BOOKORA-AI.exe
-Copy-Item -Recurse -Force dist/client dist/windows/client
+Copy-Item -Recurse -Force .output/public dist/windows/client
 Write-Host "Built dist/windows/BOOKORA-AI.exe (unsigned)." -ForegroundColor Green
