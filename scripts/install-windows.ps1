@@ -15,6 +15,9 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
   Write-Host "Created .env from .env.example. Add your Supabase values before using the app." -ForegroundColor Yellow
 }
 
+if (Get-Command node -ErrorAction SilentlyContinue) { node scripts/check-env.mjs } else { bun run env:check }
+if ($LASTEXITCODE -ne 0) { throw "Environment validation failed. Configure .env before building BOOKORA AI." }
+
 if (Get-Command bun -ErrorAction SilentlyContinue) {
   bun install --frozen-lockfile
   bun run build
@@ -22,9 +25,6 @@ if (Get-Command bun -ErrorAction SilentlyContinue) {
   npm install
   npm run build
 }
-
-bun run env:check
-if ($LASTEXITCODE -ne 0) { throw "Environment validation failed. Configure .env before running BOOKORA AI." }
 
 Write-Host "Production build completed and environment validation passed." -ForegroundColor Green
 Write-Host "Run 'bun run dev' for development or deploy the generated TanStack Start output using your hosting provider." -ForegroundColor Cyan
