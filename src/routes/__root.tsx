@@ -172,6 +172,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+function PwaRegistration() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || import.meta.env.DEV) return;
+    void navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("[PWA] Service worker registration failed", error);
+    });
+  }, []);
+
+  return null;
+}
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
@@ -256,6 +267,7 @@ function RootComponent() {
 
   return (
     <SupabaseConfigGate>
+      <PwaRegistration />
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <I18nProvider>
