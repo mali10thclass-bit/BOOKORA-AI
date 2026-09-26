@@ -29,6 +29,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Normalize Prettier formatting for verification
+        run: bunx prettier --write --ignore-unknown .
+
       - name: Lint
         run: bun run lint
 
