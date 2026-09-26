@@ -12,7 +12,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "env:check": "node scripts/check-env.mjs"
+    "env:check": "node scripts/check-env.mjs",
+    "windows:build": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-exe.ps1",
+    "windows:verify": "node scripts/check-executable-layout.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"
