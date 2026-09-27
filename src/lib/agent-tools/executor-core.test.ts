@@ -424,3 +424,104 @@ describe("runAgentToolCore — write confirmation flow", () => {
     if (result.status === "failed") expect(result.error).toContain("24 hours notice");
   });
 });
+
+describe("runAgentToolCore — management-only commit (authorization hardening)", () => {
+  const bookingInput = {
+    service_id: "11111111-1111-1111-1111-111111111111",
+    staff_id: "22222222-2222-2222-2222-222222222222",
+    start_time: "2026-09-27T14:00:00.000Z",
+    customer_name: "Test Customer",
+  };
+
+  const proposalRow = {
+    id: "99999999-9999-9999-9999-999999999999",
+    business_id: "biz-1",
+    actor_user_id: "user-1",
+    action_type: "create_booking",
+    proposal: bookingInput,
+    status: "pending",
+  };
+
+  it("ordinary member (staff) cannot confirm/execute a proposal", async () => {
+    const calls: MockCall[] = [];
+    const { client } = makeMockSupabase({ calls, responses: { ai_action_requests: { data: proposalRow } } });
+    const result = await runAgentToolCore({
+      toolName: "create_booking",
+      input: {},
+      mode: "commit",
+      proposalId: proposalRow.id,
+      ctx: { ...baseCtx, role: "staff" },
+      supabase: client,
+    });
+    expect(result.status).toBe("denied");
+    if (result.status === "denied") expect(result.error).toContain("owner, admin, or manager");
+    // Denied before any RPC or row read.
+    expect(calls.some((c) => c.kind === "rpc")).toBe(false);
+  });
+
+  it("manager can confirm/execute a proposal", async () => {
+    const calls: MockCall[] = [];
+    const { client } = makeMockSupabase({
+      calls,
+      responses: {
+        ai_action_requests: { data: proposalRow },
+        set_ai_action_request_decision: { data: true },
+        services: { data: { id: bookingInput.service_id, name: "Haircut", duration_minutes: 30, price: 20 } },
+        create_public_booking: {
+          data: { success: true, booking_id: "55555555-5555-5555-5555-555555555555" },
+        },
+      },
+    });
+    const result = await runAgentToolCore({
+      toolName: "create_booking",
+      input: {},
+      mode: "commit",
+      proposalId: proposalRow.id,
+      ctx: { ...baseCtx, role: "manager" },
+      supabase: client,
+    });
+    expect(result.status).toBe("completed");
+    expect(calls.some((c) => c.target === "set_ai_action_request_decision")).toBe(true);
+  });
+
+  it("unknown/absent role cannot confirm", async () => {
+    const calls: MockCall[] = [];
+    const { client } = makeMockSupabase({ calls });
+    const result = await runAgentToolCore({
+      toolName: "cancel_booking",
+      input: {},
+      mode: "commit",
+      proposalId: proposalRow.id,
+      ctx: { ...baseCtx, role: "guest" },
+      supabase: client,
+    });
+    expect(result.status).toBe("denied");
+    expect(calls.some((c) => c.kind === "rpc")).toBe(false);
+  });
+
+  it("staff proposals can still be created (approval is the gate)", async () => {
+    const calls: MockCall[] = [];
+    const { client } = makeMockSupabase({
+      calls,
+      responses: { create_ai_action_request: { data: proposalRow.id } },
+    });
+    const result = await runAgentToolCore({
+      toolName: "create_booking",
+      input: bookingInput,
+      mode: "auto",
+      ctx: { ...baseCtx, role: "staff" },
+      supabase: client,
+    });
+    expect(result.status).toBe("confirmation_required");
+    expect(calls.some((c) => c.target === "create_ai_action_request")).toBe(true);
+  });
+
+  it("member without business membership gets no context (unauthenticated path)", async () => {
+    const { client } = makeMockSupabase({
+      responses: { business_members: { data: null, error: null } },
+    });
+    const { resolveAgentToolContext } = await import("./executor-core.server");
+    const ctx = await resolveAgentToolContext(client, "user-without-membership");
+    expect(ctx).toBeNull();
+  });
+});

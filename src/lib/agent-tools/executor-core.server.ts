@@ -18,6 +18,12 @@ import {
   isAgentToolName,
   type AgentToolName,
 } from "./registry";
+import {
+  DECISION_DENIED_MESSAGE,
+  EXECUTION_DENIED_MESSAGE,
+  canDecideActionRequests,
+  canExecuteActionRequests,
+} from "./authorization";
 import { sanitizeUntrustedData, wrapUntrusted } from "./guardrails";
 import { logAiEvent } from "../ai-observability.server";
 
@@ -643,6 +649,21 @@ export async function runAgentToolCore(params: {
         proposalId: String(requestId),
         summary,
         input: input as unknown as Json,
+      };
+    }
+
+    // Commit path: management roles only (mirrors the DB gate in
+    // set_ai_action_request_decision; the database re-checks as authority).
+    if (!canDecideActionRequests(ctx.role) || !canExecuteActionRequests(ctx.role)) {
+      await auditToolRun(supabase, ctx, toolName, "ai_tool_denied", {
+        reason: "role_not_manager",
+        role: ctx.role,
+      });
+      return {
+        status: "denied",
+        toolName,
+        summary: "Commit denied",
+        error: DECISION_DENIED_MESSAGE,
       };
     }
 
