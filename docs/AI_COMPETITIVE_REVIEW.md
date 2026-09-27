@@ -143,3 +143,27 @@ application startup (see AI_DEPLOYMENT.md).
 - Third-party ticketing/CRM connectors.
 - Hosted vector DBs (not needed — Supabase pgvector).
 - LLM-based evaluation judges and moderation APIs.
+
+---
+
+## STATUS — Production Closure Audit (2026-09-27)
+
+**Legend: IMPLEMENTED / VERIFIED / NOT VERIFIED / DEFERRED**
+
+- Sources: official documentation only (HubSpot Agent Builder, Zendesk AI agents, Intercom Fin, Ollama OpenAI-compatible API). No proprietary code copied. Research evidence: **VERIFIED** (pages fetched during closure audit, 2026-09-27)
+- Capability comparison table (source / capability / BOOKORA equivalent / status / adoption justification):
+
+| Source | Capability | BOOKORA equivalent | Status | Adoption justification |
+| --- | --- | --- | --- | --- |
+| HubSpot Agent Builder | Define agent role, data access, response behavior; AI settings govern shared data | Agent Studio: name, tone, instructions, knowledge, permission tier, data access flags | IMPLEMENTED | Keep per-agent scoping; aligns with least-privilege |
+| HubSpot Agent Builder | Human approval / publishing workflows for agent changes | Proposal + approval flow for write actions (owner/manager only) | IMPLEMENTED (closure audit tightened to manager gate) | Prevents silent automation; matches HubSpot human-in-the-loop stance |
+| Zendesk AI agents | Webhook actions calling external backends | Server-executed tools calling Supabase RPC only (no arbitrary HTTP tools) | IMPLEMENTED | Smaller attack surface; keep until external channels need webhooks |
+| Zendesk AI agents | Session parameters / metadata for personalization | channel={public,whatsapp,dashboard,instagram} + public token scoping | IMPLEMENTED | Needed for per-tenant and per-channel behavior |
+| Zendesk AI agents | Escalation to humans with full context | requestHumanHandoff with transcript + task classification | IMPLEMENTED | Core trust behavior; already verified in tests |
+| Zendesk AI agents | Programmatic conversation export for analytics/compliance | ai_conversations + ai_agent_tool_runs + enterprise_audit_logs persistence | IMPLEMENTED | Compliance + real analytics (no fabricated metrics) |
+| Intercom Fin | Multi-source content library + guidance/policies | knowledge chunks + businessRules/agentInstructions layered prompt | IMPLEMENTED | Intercom's "guidance" pattern maps 1:1 to businessRules |
+| Intercom Fin | Role-based agent modes (service/sales/ecommerce) | agentKind: service/sales/marketing | IMPLEMENTED | Keep; cheap to maintain |
+| Intercom Fin | IDV-based personalization | Out of scope for v1 | DEFERRED | Requires identity-verification infra; low value pre-PMF |
+| Intercom Fin | Analyze flywheel (test → deploy → analyze) | ai_action_request decision loop + ops counts + drift monitoring | PARTIAL — analyze surface is minimal | Extend only after real usage data |
+| Ollama OpenAI API | OpenAI-compatible local inference, CPU-first | AI_PROVIDER=ollama via LOCAL_AI_BASE_URL | IMPLEMENTED (live runtime NOT VERIFIED in sandbox) | Zero-cost local default; avoids GPU dependency |
+| Ollama OpenAI API | api_key "required but ignored" locally | placeholder-key local mode | IMPLEMENTED | Documented in code + env example |

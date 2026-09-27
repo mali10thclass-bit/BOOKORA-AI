@@ -95,3 +95,15 @@ VERIFIED** in this Linux sandbox.
 4. Provider health probe green in Agent Operations.
 5. Smoke test: dashboard chat, availability lookup, propose→confirm booking,
    handoff, public chat rate limit.
+
+---
+
+## STATUS — Production Closure Audit (2026-09-27)
+
+**Legend: IMPLEMENTED / VERIFIED / NOT VERIFIED / DEFERRED**
+
+- Deployment readiness: Vercel + Supabase + AI provider env documented — **IMPLEMENTED** (docs + `.env.example` + `scripts/check-env.mjs`)
+- LOCAL: AI provider over `http://localhost:11434/v1` (Ollama, CPU-first) is an explicitly local-only default; never a production endpoint — CPU-first inference only, no GPU/CUDA dependencies introduced
+- STAGING/PRODUCTION readiness: **NOT VERIFIED** (no deployment performed in the closure environment; no secrets available). Production secrets must be set via the deployment secret store; never commit .env files
+- Live Supabase security regression (RLS, tenant isolation, SECURITY DEFINER, search_path): **NOT VERIFIED** (no credentials); migration `supabase/migrations/20260927_001_restrict_ai_action_decisions.sql` ready for `supabase db push`
+- PWA/Windows helper scripts in `scripts/` are developer convenience only and are not part of the production web deployment

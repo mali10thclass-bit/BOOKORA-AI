@@ -105,3 +105,15 @@ Covered by tests in `src/lib/agent-tools/executor-core.test.ts`
 - `set_ai_action_request_decision` permits any business member (not just
   owners) to approve; this matches "the person confirming is a member" for the
   dashboard channel but could be tightened to owner/manager roles later.
+
+---
+
+## STATUS — Production Closure Audit (2026-09-27)
+
+**Legend: IMPLEMENTED / VERIFIED / NOT VERIFIED / DEFERRED**
+
+- Authorization: only OWNER/MANAGER approve/reject AI action requests — **IMPLEMENTED** at DB function level (SECURITY DEFINER, search_path pinned, PUBLIC/ANON execute revoked) + server executor pre-check + pure policy mirror; 15 regression tests **VERIFIED**; live Supabase RLS regression: **NOT VERIFIED** (no credentials)
+- Prompt-injection defense (untrusted-data markers, injection detector, system-prompt precedence): **IMPLEMENTED** + **VERIFIED** — closure audit extended detector patterns to cover all 9 required regression phrases (cross-tenant data, auto-approval, role impersonation, authorization bypass, confirmation bypass, credential solicitation, knowledge-override); 18-test security regression suite added
+- Secret redaction: **IMPLEMENTED** + **VERIFIED**; closure audit extended `redactSecrets` to GitHub/Slack/GitLab/npm/AWS/Google/Anthropic/JWT token shapes (fixed a real ghp_ leak gap found by the new tests)
+- LLM cannot mutate DB directly; writes require stored-proposal commit re-validated server-side: **IMPLEMENTED** + **VERIFIED** (commit path uses stored proposal; model-supplied role/business claims ignored — regression tested)
+- Last-owner protections / role-escalation checks against live DB: **NOT VERIFIED** (code + migration preserve the existing guards; live regression requires credentials)

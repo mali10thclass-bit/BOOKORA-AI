@@ -77,3 +77,16 @@ score 0 (fail closed).
   service — the criteria scorer is local and deterministic.
 - No load/perf test harness yet (candidates: autocannon against the server
   functions; token/latency metrics are logged for manual review).
+
+---
+
+## STATUS — Production Closure Audit (2026-09-27)
+
+**Legend: IMPLEMENTED / VERIFIED / NOT VERIFIED / DEFERRED**
+
+- Canonical suite: `bun run test` — **100/100 passing** (9 test files) at closure audit; `bun run typecheck` clean; `npm run lint` 0 errors (24 pre-existing warnings, none introduced); `bun run build` passes
+- Provider protocol integration tests (real AI SDK over HTTP stub): **VERIFIED**; retry budget, timeout, malformed output, error mapping covered
+- LIVE PROVIDER VERIFICATION (real model): **NOT AVAILABLE / NOT VERIFIED** (see AI_AGENT_2 status)
+- Real booking E2E against live Supabase: **NOT VERIFIED** (no credentials); booking failure paths (invalid service/staff/date, no slots, backend rejection → never success) **VERIFIED** at unit level
+- Prompt-injection regression (9 required phrases): **VERIFIED** (`src/lib/security-regression.test.ts`)
+- env validation (`bun run env:check`): **IMPLEMENTED**; exits 1 without a valid .env (expected behavior, self-tested both ways)

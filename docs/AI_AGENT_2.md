@@ -132,3 +132,15 @@ policy (system rules).
 - Auto-tuned memory extraction (currently explicit `ai_agent_memories` rows).
 - MCP/external connectors and custom code tools (registry is in-process only).
 - Voice channels, WhatsApp/SMS deployment.
+
+---
+
+## STATUS — Production Closure Audit (2026-09-27)
+
+**Legend: IMPLEMENTED / VERIFIED / NOT VERIFIED / DEFERRED**
+
+- Tool registry (12 tools), proposal/commit execution, pending-action flow: **IMPLEMENTED** + **VERIFIED** (100 automated tests incl. executor, authorization, security regression)
+- Real model loop (Ollama / OpenAI-compatible / Lovable providers): **IMPLEMENTED**
+- LIVE PROVIDER VERIFICATION (real model runtime): **NOT AVAILABLE / NOT VERIFIED** — no Ollama binary or model weights obtainable and no AI API keys in the closure environment; protocol-level provider integration (health, chat, tool-call, timeout, error mapping, retry budget) **VERIFIED** against a local OpenAI-compatible HTTP stub (`src/lib/ai-gateway.integration.test.ts`); tests found and fixed 2 real test-harness defects and confirmed error categorization over real AI SDK errors
+- Manager-gated AI action decisions + execution (owner/admin/manager only): **IMPLEMENTED** (server + DB RPC) ; live DB regression: **NOT VERIFIED** (no Supabase credentials available)
+- Deferred v1.1 tools (get_locations, get_customer, update_customer, create_customer, send_booking_confirmation): **DEFERRED**
