@@ -10,41 +10,56 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiAgentOperationsRouteImport } from './routes/ai-agent-operations'
+import { Route as AiAgentStudioRouteImport } from './routes/ai-agent-studio'
 import { Route as AiAssistantRouteImport } from './routes/ai-assistant'
+import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AutomationsRouteImport } from './routes/automations'
 import { Route as BookingsRouteImport } from './routes/bookings'
+import { Route as BusinessOsRouteImport } from './routes/business-os'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as DeveloperRouteImport } from './routes/developer'
+import { Route as FormsRouteImport } from './routes/forms'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as PlansRouteImport } from './routes/plans'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as ReviewsRouteImport } from './routes/reviews'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as StaffRouteImport } from './routes/staff'
-import { Route as BookSlugRouteImport } from './routes/book.$slug'
-import { Route as WaitlistRouteImport } from './routes/waitlist'
-import { Route as ReviewsRouteImport } from './routes/reviews'
-import { Route as ResourcesRouteImport } from './routes/resources'
-import { Route as PackagesRouteImport } from './routes/packages'
-import { Route as FormsRouteImport } from './routes/forms'
-import { Route as DeveloperRouteImport } from './routes/developer'
-import { Route as AutomationsRouteImport } from './routes/automations'
-import { Route as AiTrainerRouteImport } from './routes/ai-trainer'
-import { Route as AiAgentStudioRouteImport } from './routes/ai-agent-studio'
-import { Route as AiAgentOperationsRouteImport } from './routes/ai-agent-operations'
-import { Route as AiChatPublicKeyRouteImport } from './routes/ai-chat.$publicKey'
 import { Route as SmartOperationsRouteImport } from './routes/smart-operations'
-import { Route as BusinessOsRouteImport } from './routes/business-os'
+import { Route as StaffRouteImport } from './routes/staff'
+import { Route as WaitlistRouteImport } from './routes/waitlist'
+import { Route as AiChatPublicKeyRouteImport } from './routes/ai-chat.$publicKey'
+import { Route as BookSlugRouteImport } from './routes/book.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
+  id: '/ai-agent-operations',
+  path: '/ai-agent-operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiAgentStudioRoute = AiAgentStudioRouteImport.update({
+  id: '/ai-agent-studio',
+  path: '/ai-agent-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AiAssistantRoute = AiAssistantRouteImport.update({
   id: '/ai-assistant',
   path: '/ai-assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiTrainerRoute = AiTrainerRouteImport.update({
+  id: '/ai-trainer',
+  path: '/ai-trainer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -57,9 +72,19 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AutomationsRoute = AutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookingsRoute = BookingsRouteImport.update({
   id: '/bookings',
   path: '/bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BusinessOsRoute = BusinessOsRouteImport.update({
+  id: '/business-os',
+  path: '/business-os',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -72,62 +97,6 @@ const CustomersRoute = CustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlansRoute = PlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StaffRoute = StaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiTrainerRoute = AiTrainerRouteImport.update({
-  id: '/ai-trainer',
-  path: '/ai-trainer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiAgentStudioRoute = AiAgentStudioRouteImport.update({
-  id: '/ai-agent-studio',
-  path: '/ai-agent-studio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiAgentOperationsRoute = AiAgentOperationsRouteImport.update({
-  id: '/ai-agent-operations',
-  path: '/ai-agent-operations',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AiChatPublicKeyRoute = AiChatPublicKeyRouteImport.update({
-  id: '/ai-chat/$publicKey',
-  path: '/ai-chat/$publicKey',
-  getParentRoute: () => rootRouteImport,
-} as any)
-
-const AutomationsRoute = AutomationsRouteImport.update({
-  id: '/automations',
-  path: '/automations',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DeveloperRoute = DeveloperRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -138,9 +107,24 @@ const FormsRoute = FormsRouteImport.update({
   path: '/forms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PackagesRoute = PackagesRouteImport.update({
   id: '/packages',
   path: '/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlansRoute = PlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResourcesRoute = ResourcesRouteImport.update({
@@ -153,9 +137,14 @@ const ReviewsRoute = ReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WaitlistRoute = WaitlistRouteImport.update({
-  id: '/waitlist',
-  path: '/waitlist',
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SmartOperationsRoute = SmartOperationsRouteImport.update({
@@ -163,9 +152,19 @@ const SmartOperationsRoute = SmartOperationsRouteImport.update({
   path: '/smart-operations',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BusinessOsRoute = BusinessOsRouteImport.update({
-  id: '/business-os',
-  path: '/business-os',
+const StaffRoute = StaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaitlistRoute = WaitlistRouteImport.update({
+  id: '/waitlist',
+  path: '/waitlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiChatPublicKeyRoute = AiChatPublicKeyRouteImport.update({
+  id: '/ai-chat/$publicKey',
+  path: '/ai-chat/$publicKey',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookSlugRoute = BookSlugRouteImport.update({
@@ -176,202 +175,209 @@ const BookSlugRoute = BookSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
   '/ai-assistant': typeof AiAssistantRoute
+  '/ai-trainer': typeof AiTrainerRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/automations': typeof AutomationsRoute
   '/bookings': typeof BookingsRoute
+  '/business-os': typeof BusinessOsRoute
   '/calendar': typeof CalendarRoute
   '/customers': typeof CustomersRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/plans': typeof PlansRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/staff': typeof StaffRoute
-  '/ai-trainer': typeof AiTrainerRoute
-  '/ai-agent-studio': typeof AiAgentStudioRoute
-  '/ai-agent-operations': typeof AiAgentOperationsRoute
-  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
-  '/automations': typeof AutomationsRoute
   '/developer': typeof DeveloperRoute
   '/forms': typeof FormsRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/packages': typeof PackagesRoute
+  '/plans': typeof PlansRoute
   '/resources': typeof ResourcesRoute
   '/reviews': typeof ReviewsRoute
-  '/waitlist': typeof WaitlistRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
   '/smart-operations': typeof SmartOperationsRoute
-  '/business-os': typeof BusinessOsRoute
+  '/staff': typeof StaffRoute
+  '/waitlist': typeof WaitlistRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
   '/ai-assistant': typeof AiAssistantRoute
+  '/ai-trainer': typeof AiTrainerRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/automations': typeof AutomationsRoute
   '/bookings': typeof BookingsRoute
+  '/business-os': typeof BusinessOsRoute
   '/calendar': typeof CalendarRoute
   '/customers': typeof CustomersRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/plans': typeof PlansRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/staff': typeof StaffRoute
-  '/ai-trainer': typeof AiTrainerRoute
-  '/automations': typeof AutomationsRoute
   '/developer': typeof DeveloperRoute
   '/forms': typeof FormsRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/packages': typeof PackagesRoute
+  '/plans': typeof PlansRoute
   '/resources': typeof ResourcesRoute
   '/reviews': typeof ReviewsRoute
-  '/waitlist': typeof WaitlistRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
   '/smart-operations': typeof SmartOperationsRoute
+  '/staff': typeof StaffRoute
+  '/waitlist': typeof WaitlistRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-agent-operations': typeof AiAgentOperationsRoute
+  '/ai-agent-studio': typeof AiAgentStudioRoute
   '/ai-assistant': typeof AiAssistantRoute
+  '/ai-trainer': typeof AiTrainerRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/automations': typeof AutomationsRoute
   '/bookings': typeof BookingsRoute
+  '/business-os': typeof BusinessOsRoute
   '/calendar': typeof CalendarRoute
   '/customers': typeof CustomersRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/plans': typeof PlansRoute
-  '/services': typeof ServicesRoute
-  '/settings': typeof SettingsRoute
-  '/staff': typeof StaffRoute
-  '/ai-trainer': typeof AiTrainerRoute
-  '/ai-agent-studio': typeof AiAgentStudioRoute
-  '/ai-agent-operations': typeof AiAgentOperationsRoute
-  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
-  '/ai-agent-studio': typeof AiAgentStudioRoute
-  '/ai-agent-operations': typeof AiAgentOperationsRoute
-  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
-  '/automations': typeof AutomationsRoute
   '/developer': typeof DeveloperRoute
   '/forms': typeof FormsRoute
+  '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRoute
   '/packages': typeof PackagesRoute
+  '/plans': typeof PlansRoute
   '/resources': typeof ResourcesRoute
   '/reviews': typeof ReviewsRoute
-  '/waitlist': typeof WaitlistRoute
+  '/services': typeof ServicesRoute
+  '/settings': typeof SettingsRoute
   '/smart-operations': typeof SmartOperationsRoute
-  '/business-os': typeof BusinessOsRoute
+  '/staff': typeof StaffRoute
+  '/waitlist': typeof WaitlistRoute
+  '/ai-chat/$publicKey': typeof AiChatPublicKeyRoute
   '/book/$slug': typeof BookSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai-agent-operations'
+    | '/ai-agent-studio'
     | '/ai-assistant'
+    | '/ai-trainer'
     | '/analytics'
     | '/auth'
+    | '/automations'
     | '/bookings'
+    | '/business-os'
     | '/calendar'
     | '/customers'
-    | '/notifications'
-    | '/onboarding'
-    | '/plans'
-    | '/services'
-    | '/settings'
-    | '/staff'
-    | '/ai-trainer'
-    | '/ai-agent-studio'
-    | '/ai-agent-operations'
-    | '/ai-chat/$publicKey'
-    | '/automations'
     | '/developer'
     | '/forms'
+    | '/notifications'
+    | '/onboarding'
     | '/packages'
+    | '/plans'
     | '/resources'
     | '/reviews'
-    | '/waitlist'
+    | '/services'
+    | '/settings'
     | '/smart-operations'
-    | '/business-os'
+    | '/staff'
+    | '/waitlist'
+    | '/ai-chat/$publicKey'
     | '/book/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai-agent-operations'
+    | '/ai-agent-studio'
     | '/ai-assistant'
+    | '/ai-trainer'
     | '/analytics'
     | '/auth'
+    | '/automations'
     | '/bookings'
+    | '/business-os'
     | '/calendar'
     | '/customers'
-    | '/notifications'
-    | '/onboarding'
-    | '/plans'
-    | '/services'
-    | '/settings'
-    | '/staff'
-    | '/ai-trainer'
-    | '/automations'
     | '/developer'
     | '/forms'
+    | '/notifications'
+    | '/onboarding'
     | '/packages'
+    | '/plans'
     | '/resources'
     | '/reviews'
-    | '/waitlist'
+    | '/services'
+    | '/settings'
     | '/smart-operations'
-    | '/business-os'
+    | '/staff'
+    | '/waitlist'
+    | '/ai-chat/$publicKey'
     | '/book/$slug'
   id:
     | '__root__'
     | '/'
+    | '/ai-agent-operations'
+    | '/ai-agent-studio'
     | '/ai-assistant'
+    | '/ai-trainer'
     | '/analytics'
     | '/auth'
+    | '/automations'
     | '/bookings'
+    | '/business-os'
     | '/calendar'
     | '/customers'
-    | '/notifications'
-    | '/onboarding'
-    | '/plans'
-    | '/services'
-    | '/settings'
-    | '/staff'
-    | '/ai-trainer'
-    | '/automations'
     | '/developer'
     | '/forms'
+    | '/notifications'
+    | '/onboarding'
     | '/packages'
+    | '/plans'
     | '/resources'
     | '/reviews'
-    | '/waitlist'
+    | '/services'
+    | '/settings'
     | '/smart-operations'
-    | '/business-os'
+    | '/staff'
+    | '/waitlist'
+    | '/ai-chat/$publicKey'
     | '/book/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiAgentOperationsRoute: typeof AiAgentOperationsRoute
+  AiAgentStudioRoute: typeof AiAgentStudioRoute
   AiAssistantRoute: typeof AiAssistantRoute
+  AiTrainerRoute: typeof AiTrainerRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
+  AutomationsRoute: typeof AutomationsRoute
   BookingsRoute: typeof BookingsRoute
+  BusinessOsRoute: typeof BusinessOsRoute
   CalendarRoute: typeof CalendarRoute
   CustomersRoute: typeof CustomersRoute
-  NotificationsRoute: typeof NotificationsRoute
-  OnboardingRoute: typeof OnboardingRoute
-  PlansRoute: typeof PlansRoute
-  ServicesRoute: typeof ServicesRoute
-  SettingsRoute: typeof SettingsRoute
-  StaffRoute: typeof StaffRoute
-  AiTrainerRoute: typeof AiTrainerRoute
-  AiAgentStudioRoute: typeof AiAgentStudioRoute
-  AiAgentOperationsRoute: typeof AiAgentOperationsRoute
-  AiChatPublicKeyRoute: typeof AiChatPublicKeyRoute
-  AutomationsRoute: typeof AutomationsRoute
   DeveloperRoute: typeof DeveloperRoute
   FormsRoute: typeof FormsRoute
+  NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRoute
   PackagesRoute: typeof PackagesRoute
+  PlansRoute: typeof PlansRoute
   ResourcesRoute: typeof ResourcesRoute
   ReviewsRoute: typeof ReviewsRoute
-  WaitlistRoute: typeof WaitlistRoute
+  ServicesRoute: typeof ServicesRoute
+  SettingsRoute: typeof SettingsRoute
   SmartOperationsRoute: typeof SmartOperationsRoute
-  BusinessOsRoute: typeof BusinessOsRoute
+  StaffRoute: typeof StaffRoute
+  WaitlistRoute: typeof WaitlistRoute
+  AiChatPublicKeyRoute: typeof AiChatPublicKeyRoute
   BookSlugRoute: typeof BookSlugRoute
 }
 
@@ -384,11 +390,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-agent-operations': {
+      id: '/ai-agent-operations'
+      path: '/ai-agent-operations'
+      fullPath: '/ai-agent-operations'
+      preLoaderRoute: typeof AiAgentOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-agent-studio': {
+      id: '/ai-agent-studio'
+      path: '/ai-agent-studio'
+      fullPath: '/ai-agent-studio'
+      preLoaderRoute: typeof AiAgentStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ai-assistant': {
       id: '/ai-assistant'
       path: '/ai-assistant'
       fullPath: '/ai-assistant'
       preLoaderRoute: typeof AiAssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-trainer': {
+      id: '/ai-trainer'
+      path: '/ai-trainer'
+      fullPath: '/ai-trainer'
+      preLoaderRoute: typeof AiTrainerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -405,11 +432,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/automations': {
+      id: '/automations'
+      path: '/automations'
+      fullPath: '/automations'
+      preLoaderRoute: typeof AutomationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bookings': {
       id: '/bookings'
       path: '/bookings'
       fullPath: '/bookings'
       preLoaderRoute: typeof BookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/business-os': {
+      id: '/business-os'
+      path: '/business-os'
+      fullPath: '/business-os'
+      preLoaderRoute: typeof BusinessOsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -426,83 +467,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plans': {
-      id: '/plans'
-      path: '/plans'
-      fullPath: '/plans'
-      preLoaderRoute: typeof PlansRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/staff': {
-      id: '/staff'
-      path: '/staff'
-      fullPath: '/staff'
-      preLoaderRoute: typeof StaffRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-trainer': {
-      id: '/ai-trainer'
-      path: '/ai-trainer'
-      fullPath: '/ai-trainer'
-      preLoaderRoute: typeof AiTrainerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-agent-studio': {
-      id: '/ai-agent-studio'
-      path: '/ai-agent-studio'
-      fullPath: '/ai-agent-studio'
-      preLoaderRoute: typeof AiAgentStudioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-agent-operations': {
-      id: '/ai-agent-operations'
-      path: '/ai-agent-operations'
-      fullPath: '/ai-agent-operations'
-      preLoaderRoute: typeof AiAgentOperationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ai-chat/$publicKey': {
-      id: '/ai-chat/$publicKey'
-      path: '/ai-chat/$publicKey'
-      fullPath: '/ai-chat/$publicKey'
-      preLoaderRoute: typeof AiChatPublicKeyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/automations': {
-      id: '/automations'
-      path: '/automations'
-      fullPath: '/automations'
-      preLoaderRoute: typeof AutomationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/developer': {
       id: '/developer'
       path: '/developer'
@@ -517,11 +481,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/packages': {
       id: '/packages'
       path: '/packages'
       fullPath: '/packages'
       preLoaderRoute: typeof PackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plans': {
+      id: '/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resources': {
@@ -538,11 +523,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/waitlist': {
-      id: '/waitlist'
-      path: '/waitlist'
-      fullPath: '/waitlist'
-      preLoaderRoute: typeof WaitlistRouteImport
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/smart-operations': {
@@ -552,11 +544,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SmartOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/business-os': {
-      id: '/business-os'
-      path: '/business-os'
-      fullPath: '/business-os'
-      preLoaderRoute: typeof BusinessOsRouteImport
+    '/staff': {
+      id: '/staff'
+      path: '/staff'
+      fullPath: '/staff'
+      preLoaderRoute: typeof StaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waitlist': {
+      id: '/waitlist'
+      path: '/waitlist'
+      fullPath: '/waitlist'
+      preLoaderRoute: typeof WaitlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-chat/$publicKey': {
+      id: '/ai-chat/$publicKey'
+      path: '/ai-chat/$publicKey'
+      fullPath: '/ai-chat/$publicKey'
+      preLoaderRoute: typeof AiChatPublicKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/book/$slug': {
@@ -571,32 +577,31 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiAgentOperationsRoute: AiAgentOperationsRoute,
+  AiAgentStudioRoute: AiAgentStudioRoute,
   AiAssistantRoute: AiAssistantRoute,
+  AiTrainerRoute: AiTrainerRoute,
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
+  AutomationsRoute: AutomationsRoute,
   BookingsRoute: BookingsRoute,
+  BusinessOsRoute: BusinessOsRoute,
   CalendarRoute: CalendarRoute,
   CustomersRoute: CustomersRoute,
-  NotificationsRoute: NotificationsRoute,
-  OnboardingRoute: OnboardingRoute,
-  PlansRoute: PlansRoute,
-  ServicesRoute: ServicesRoute,
-  SettingsRoute: SettingsRoute,
-  StaffRoute: StaffRoute,
-  AiTrainerRoute: AiTrainerRoute,
-  AiAgentStudioRoute: AiAgentStudioRoute,
-  AiAgentOperationsRoute: AiAgentOperationsRoute,
-  AiChatPublicKeyRoute: AiChatPublicKeyRoute,
-  AiAgentStudioRoute: AiAgentStudioRoute,
-  AutomationsRoute: AutomationsRoute,
   DeveloperRoute: DeveloperRoute,
   FormsRoute: FormsRoute,
+  NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRoute,
   PackagesRoute: PackagesRoute,
+  PlansRoute: PlansRoute,
   ResourcesRoute: ResourcesRoute,
   ReviewsRoute: ReviewsRoute,
-  WaitlistRoute: WaitlistRoute,
+  ServicesRoute: ServicesRoute,
+  SettingsRoute: SettingsRoute,
   SmartOperationsRoute: SmartOperationsRoute,
-  BusinessOsRoute: BusinessOsRoute,
+  StaffRoute: StaffRoute,
+  WaitlistRoute: WaitlistRoute,
+  AiChatPublicKeyRoute: AiChatPublicKeyRoute,
   BookSlugRoute: BookSlugRoute,
 }
 export const routeTree = rootRouteImport

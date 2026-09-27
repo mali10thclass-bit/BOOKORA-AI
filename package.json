@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "env:check": "node scripts/check-env.mjs",
     "windows:build": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-exe.ps1",
     "windows:verify": "node scripts/check-executable-layout.mjs"
@@ -93,6 +94,7 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "8.1.5"
+    "vite": "8.1.5",
+    "vitest": "^5.0.2"
   }
 }

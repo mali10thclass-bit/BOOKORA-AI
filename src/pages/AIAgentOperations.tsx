@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { PlanGate } from "@/components/PlanGate";
 import { Protected } from "@/components/Protected";
 import { runAgentEvaluation } from "@/lib/assistant.functions";
+import { AiOpsPanel } from "@/components/AiOpsPanel";
 
 type Agent = { id: string; name: string };
 type Tool = { id: string; agent_id: string; name: string; tool_type: string; approval_required: boolean; enabled: boolean };
@@ -240,6 +241,7 @@ export function AIAgentOperations() {
       <section className="card p-6">
         <div className="flex items-center gap-3"><ShieldCheck className="text-primary-600"/><div><h1 className="text-2xl font-bold">AI Agent Operations</h1><p className="text-sm text-gray-500">Tools, approvals, evaluation, human handoff and deployment controls for production agents.</p></div></div>
       </section>
+      <AiOpsPanel />
       <section className="card p-5">
         <label className="text-sm font-medium">Active agent</label>
         <select className="input mt-2" value={agentId} onChange={e=>setAgentId(e.target.value)}>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select>
