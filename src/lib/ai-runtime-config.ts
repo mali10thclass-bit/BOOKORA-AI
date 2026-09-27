@@ -62,7 +62,7 @@ export type AiErrorCategory =
   | "unknown";
 
 const SECRET_PATTERN =
-  /\b(?:sk-[A-Za-z0-9_-]{8,}|sb_secret_[A-Za-z0-9_-]{8,}|sb_publishable_[A-Za-z0-9_-]{8,}|Bearer\s+[A-Za-z0-9._~+/-]{12,}|LOVABLE_API_KEY\s*[:=]\s*\S+|api[_-]?key["'\s:=]+\S{8,})/gi;
+  /\b(?:sk-[A-Za-z0-9_-]{8,}|sk-ant-[A-Za-z0-9_-]{8,}|sb_secret_[A-Za-z0-9_-]{8,}|sb_publishable_[A-Za-z0-9_-]{8,}|ghp_[A-Za-z0-9]{16,}|gho_[A-Za-z0-9]{16,}|ghu_[A-Za-z0-9]{16,}|ghs_[A-Za-z0-9]{16,}|ghr_[A-Za-z0-9]{16,}|github_pat_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|glpat-[A-Za-z0-9_-]{16,}|npm_[A-Za-z0-9]{30,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}|Bearer\s+[A-Za-z0-9._~+/-]{12,}|LOVABLE_API_KEY\s*[:=]\s*\S+|api[_-]?key["'\s:=]+\S{8,})/gi;
 
 /** Redacts anything that looks like a credential before text is logged or returned. */
 export function redactSecrets(text: string): string {

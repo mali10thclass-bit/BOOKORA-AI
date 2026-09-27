@@ -25,6 +25,20 @@ const INJECTION_PATTERNS: RegExp[] = [
   /forget\s+(?:everything|all|your)\b/i,
   /\bBEGIN\s+SYSTEM\b/i,
   /\bsystem\s*prompt\s*(?:is|:|=)/i,
+  // Tenant / role / automation / credential-injection phrases.
+  /\b(?:give|show|get|send)\s+me\s+(?:another|some other|other)\s+business'?s?\s+(?:data|bookings|customers|information)/i,
+  /\b(?:another|some other|other)\s+(?:business'?s?|tenant)\s+(?:data|records|bookings|customers)/i,
+  /\bapprove\b[^.!?]*\b(?:automatically|instantly|immediately|now)\b/i,
+  /\b(?:automatically|instantly|immediately)\s+approve\b/i,
+  /\bpretend\s+(?:i\s+am|i'm|to\s+be|you\s+are|that\s+i\s+am)\b/i,
+  /\bpretend\s+(?:i\s+am|i'm)\s+the\s+(?:owner|admin|manager|boss)\b/i,
+  /\bignore\s+(?:the\s+)?(?:authorization|authorisation|permissions?|role\s+checks?|access\s+controls?|security)\b/i,
+  /\b(?:skip|bypass|ignore|without)\s+(?:the\s+|any\s+)?(?:user\s+)?(?:confirmation|approval|authorization|authorisation)\b/i,
+  /\bwithout\s+(?:asking|confirmation|approval)\b/i,
+  /\b(?:no|without)\s+confirmation\s+(?:needed|required|necessary)\b/i,
+  /\b(?:tell|give)\s+me\s+(?:your|the)\s+(?:api\s*key|apikey|token|password|credentials?|secrets?|service\s*role)\b/i,
+  /\b(?:reveal|show|print|output)\s+(?:your|the)\s+(?:api\s*key|token|password|credentials?|secrets?)\b/i,
+  /\bknowledge\s+(?:override|overrides)\s+(?:the\s+)?(?:system|rules|instructions)/i,
 ];
 
 /**
