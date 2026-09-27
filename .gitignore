@@ -35,3 +35,6 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# npm lockfile — this project is Bun-based (bun.lock is canonical)
+package-lock.json
